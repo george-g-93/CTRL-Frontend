@@ -8,6 +8,9 @@ import About from "./pages/About.jsx";
 import NotFound from "./pages/NotFound.jsx";
 import NewsDetail from "./pages/NewsDetail.jsx";
 import Services from "./pages/Services.jsx";
+import Privacy from "./pages/Privacy.jsx";
+import Terms from "./pages/Terms.jsx";
+import Cookies from "./pages/Cookies.jsx";
 
 export default function App() {
   return (
@@ -20,6 +23,9 @@ export default function App() {
         <Route path="/about" element={<About />} />
         <Route path="*" element={<NotFound />} />
         <Route path="/services" element={<Services />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/cookies" element={<Cookies />} />
       </Routes>
       <Footer />
     </div>

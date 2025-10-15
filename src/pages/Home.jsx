@@ -72,7 +72,7 @@ export default function Home() {
                 <CTAButton primary>Book an intro call</CTAButton>
                 <CTAButton>See audit checklist</CTAButton>
               </div>
-              <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
+              <div className="mt-8 flex flex-wrap items-center justify-center sm:justify-start text-center sm:text-left gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4"/> UK-wide</div>
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4"/> SME to enterprise</div>
                 <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4"/> Confidential & independent</div>

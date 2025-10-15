@@ -4,6 +4,8 @@ import { Link, NavLink, useLocation } from "react-router-dom";
 import CTRLMark from "./CTRLMark.jsx";
 import { Menu, X, Sun, Moon, Laptop } from "lucide-react";
 import { useTheme } from "../theme/ThemeProvider.jsx";
+import Logo from "./Logo.jsx";
+
 
 // FILE: src/components/Header.jsx
 // …imports unchanged…
@@ -24,10 +26,14 @@ export default function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/80 backdrop-blur dark:border-white/10 dark:bg-slate-950/90">
       <div className="mx-auto max-w-7xl px-6 h-16 flex items-center justify-between">
+        {/*
         <Link to="/" className="flex items-center gap-3 group">
           <CTRLMark />
           <span className="font-semibold tracking-widest">CTRL</span>
         </Link>
+        */}
+
+        <Logo className="h-12" alt="CTRL Compliance" />
 
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8 text-sm text-slate-600 dark:text-slate-300">
