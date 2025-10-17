@@ -143,7 +143,7 @@ export default function Home() {
 
       {/* PROCESS */}
       <section className="mx-auto max-w-7xl px-6 py-16" id="process">
-        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">How engagement works</h2>
+        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Fully compliant in 3 simple steps</h2>
         <div className="mt-8 grid gap-6 md:grid-cols-3">
           {steps.map((s, i) => (
             <motion.div
@@ -164,7 +164,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* TESTIMONIAL */}
+      {/* TESTIMONIAL 
       <section className="mx-auto max-w-5xl px-6 py-16">
         <div className="rounded-3xl border p-8 md:p-12
           border-slate-200 bg-white
@@ -181,7 +181,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section>*/}
 
       {/* CONTACT */}
       <section id="contact" className="mx-auto max-w-6xl px-6 pb-20">

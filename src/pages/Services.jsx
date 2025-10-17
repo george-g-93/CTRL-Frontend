@@ -204,7 +204,7 @@ export default function Services() {
       <div className="mt-12 rounded-2xl border p-6
         border-slate-200 bg-white shadow-sm
         dark:border-white/10 dark:bg-white/5">
-        <h2 className="text-xl font-semibold">How engagement works</h2>
+        <h2 className="text-xl font-semibold">Fully compliant in 3 simple steps</h2>
         <ol className="mt-3 grid gap-4 md:grid-cols-3 text-sm">
           <li className="rounded-xl border p-4 border-slate-200 bg-slate-50 dark:border-white/10 dark:bg-white/10">
             <div className="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">01</div>
@@ -225,13 +225,13 @@ export default function Services() {
       </div>
 
       {/* FAQ (optional quick answers) */}
-      <div className="mt-12 grid gap-6 md:grid-cols-2">
-        <div className="rounded-2xl border p-6 border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
+      <div className="mt-12 grid gap-6 md:grid-cols-1">
+       {/* <div className="rounded-2xl border p-6 border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
           <h3 className="text-lg font-semibold">How do you price?</h3>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
             Fixed-fee for defined projects, or a monthly retainer for ongoing monitoring and analysis. We’ll suggest the leanest option that still keeps you safe.
           </p>
-        </div>
+        </div>*/}
         <div className="rounded-2xl border p-6 border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5">
           <h3 className="text-lg font-semibold">Can you work UK-wide?</h3>
           <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
