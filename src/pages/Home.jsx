@@ -73,9 +73,9 @@ export default function Home() {
                 <CTAButton>See audit checklist</CTAButton>
               </div>
               <div className="mt-8 flex flex-wrap items-center justify-center sm:justify-start text-center sm:text-left gap-x-6 gap-y-2 text-sm text-slate-500 dark:text-slate-400">
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4"/> UK-wide</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4"/> SME to enterprise</div>
-                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4"/> Confidential & independent</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> UK-wide</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> SME to enterprise</div>
+                <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4" /> Confidential & independent</div>
               </div>
             </div>
             <HeroCard />
@@ -83,7 +83,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* LOGO STRIP */}
+      {/* LOGO STRIP 
       <section className="mx-auto max-w-7xl px-6 py-10">
         <p className="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">
           Trusted by operations across logistics, retail, construction, and field services
@@ -100,7 +100,7 @@ export default function Home() {
             </div>
           ))}
         </div>
-      </section>
+      </section>*/}
 
       {/* FEATURES */}
       <section className="mx-auto max-w-7xl px-6 py-16" id="services">
@@ -110,7 +110,7 @@ export default function Home() {
             <p className="mt-2 text-slate-600 dark:text-slate-400">Audits, advice, and embedded systems for sustained compliance.</p>
           </div>
           <a href="#contact" className="text-emerald-700 hover:text-emerald-600 dark:text-emerald-300 dark:hover:text-emerald-200 inline-flex items-center gap-2 text-sm">
-            Talk to an expert <ArrowRight className="h-4 w-4"/>
+            Talk to an expert <ArrowRight className="h-4 w-4" />
           </a>
         </div>
 
@@ -126,9 +126,12 @@ export default function Home() {
                 border-slate-200 bg-white shadow-sm
                 dark:border-white/10 dark:bg-white/5 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
             >
-              <div className="flex items-center justify-center h-11 w-11 rounded-xl border
-                border-slate-200 bg-slate-50
-                dark:border-white/10 dark:bg-gradient-to-br dark:from-emerald-400/20 dark:to-cyan-400/20">
+              <div
+                className="flex items-center justify-center h-11 w-11 rounded-xl border
+             border-slate-200 bg-slate-100
+             dark:border-black/10 dark:bg-gradient-to-br dark:from-emerald-400/20 dark:to-cyan-400/20
+             [&>svg]:!text-black dark:[&>svg]:!text-black"
+              >
                 {f.icon}
               </div>
               <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
@@ -216,7 +219,7 @@ function HomeContactForm() {
       <div className="grid gap-6 sm:grid-cols-2">
         <Field label="Full name"><input required className="field" placeholder="Alex Smith" /></Field>
         <Field label="Company"><input className="field" placeholder="Acme Logistics" /></Field>
-        <Field label="Email"><input type="email" required className="field" placeholder="you@company.co.uk" value={email} onChange={(e)=>setEmail(e.target.value)} /></Field>
+        <Field label="Email"><input type="email" required className="field" placeholder="you@company.co.uk" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
         <Field label="Fleet size">
           <select className="field"><option>1–10</option><option>11–50</option><option>51–150</option><option>151+</option></select>
         </Field>
@@ -245,8 +248,8 @@ function ContactCard() {
       <h3 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Speak with CTRL</h3>
       <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">Tell us a bit about your operation and we’ll suggest a sensible starting point.</p>
       <div className="mt-6 flex flex-col gap-3 text-sm text-slate-700 dark:text-slate-300">
-        <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300" href="tel:+440000000000"><Phone className="h-4 w-4"/> +44 (0)00 0000 0000</a>
-        <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300" href="mailto:hello@ctrl-compliance.co.uk"><Mail className="h-4 w-4"/> hello@ctrl-compliance.co.uk</a>
+        <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300" href="tel:+443301338986"><Phone className="h-4 w-4" />03301338986</a>
+        <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300" href="mailto:daniel@ctrlcompliance.co.uk"><Mail className="h-4 w-4" />daniel@ctrlcompliance.co.uk</a>
       </div>
     </div>
   );
