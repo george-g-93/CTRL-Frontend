@@ -92,7 +92,7 @@ const services = [
     title: "Training & Toolbox Talks",
     summary: "Short, practical sessions for drivers, planners, and transport managers.",
     bullets: [
-      "Drivers’ hours & WTD refresher",
+      "Drivers’ hours & WTD refresher ",
       "Defect reporting done right",
       "TM responsibilities & oversight",
     ],
