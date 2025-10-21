@@ -1,6 +1,7 @@
 // FILE: src/pages/Home.jsx
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, useTransform, useScroll } from "framer-motion";
+import { useRef } from "react";
 import {
   ShieldCheck, ClipboardCheck, Truck, FileSpreadsheet,
   TimerReset, ArrowRight, Phone, Mail, CheckCircle2,
@@ -56,7 +57,7 @@ const styles = `
 }
 `;
 
-
+//Functions
 
 if (typeof document !== "undefined" && !document.getElementById("ctrl-styles")) {
   const style = document.createElement("style");
@@ -196,6 +197,119 @@ function FlipCard({ icon, title, desc, backPoints = [], tags = [], href }) {
   );
 }
 
+function ProcessStep({ index, title, desc, Icon, points }) {
+  const cardRef = useRef(null);
+
+  function handleMouseMove(e) {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width) * 100;
+    const y = ((e.clientY - rect.top) / rect.height) * 100;
+    el.style.setProperty("--mx", `${x}%`);
+    el.style.setProperty("--my", `${y}%`);
+  }
+
+  return (
+    <motion.div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={() => {
+        if (cardRef.current) {
+          cardRef.current.style.removeProperty("--mx");
+          cardRef.current.style.removeProperty("--my");
+        }
+      }}
+      initial={{ opacity: 0, y: 8 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.45 }}
+      whileHover={{ y: -4 }}
+      className="
+        relative rounded-2xl border p-6
+        border-slate-200 bg-gradient-to-b from-white to-slate-50
+        dark:border-white/10 dark:from-white/[0.06] dark:to-white/[0.03]
+        shadow-sm hover:shadow-lg transition-shadow
+      "
+    >
+      {/* soft spotlight that follows cursor (no transform) */}
+      <div
+        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 md:opacity-100"
+        style={{
+          background:
+            "radial-gradient(400px 180px at var(--mx,50%) var(--my,0%), rgba(16,185,129,0.10), transparent 60%)",
+          maskImage:
+            "radial-gradient(380px 160px at var(--mx,50%) var(--my,0%), rgba(0,0,0,0.8), transparent 70%)",
+        }}
+      />
+
+      {/* header row */}
+      <div className="flex items-center gap-3">
+        <div className="
+          h-10 w-10 grid place-items-center rounded-xl border
+          border-emerald-300/40 bg-emerald-50 text-emerald-700
+          dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-200
+        ">
+          {String(index).padStart(2, "0")}
+        </div>
+        <div className="
+          h-10 w-10 grid place-items-center rounded-xl border
+          border-slate-200 bg-slate-50
+          dark:border-white/10 dark:bg-emerald-400/20
+        ">
+          <Icon className="h-5 w-5" />
+        </div>
+      </div>
+
+      <h3 className="mt-4 text-xl font-semibold">{title}</h3>
+      <p className="mt-1 text-slate-600 dark:text-slate-300 text-sm">{desc}</p>
+
+      <ul className="mt-4 space-y-2">
+        {points.map((p) => (
+          <li key={p} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+            <CheckCircle2 className="mt-[2px] h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+            <span>{p}</span>
+          </li>
+        ))}
+      </ul>
+    </motion.div>
+  );
+}
+
+
+
+function SectionProgress({ targetRef }) {
+  const { scrollYProgress } = useScroll({
+    target: targetRef,
+    offset: ["start 80%", "end 20%"], // start filling when section comes in, finish before it leaves
+  });
+  const scaleX = useTransform(scrollYProgress, [0, 1], [0, 1]);
+
+  return (
+    <div className="relative my-6 h-1 bg-slate-200/60 dark:bg-white/10 rounded">
+      <motion.div
+        style={{ scaleX, transformOrigin: "left" }}
+        className="absolute inset-y-0 left-0 rounded bg-gradient-to-r from-emerald-500 to-cyan-500"
+      />
+    </div>
+  );
+}
+
+function SectionRule() {
+  return (
+    <div className="relative my-6 h-1 bg-slate-200/60 dark:bg-white/10 rounded">
+      <motion.div
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true, amount: 0.6 }}
+        transition={{ duration: 0.6, ease: "easeOut" }}
+        style={{ transformOrigin: "left" }}
+        className="absolute inset-y-0 left-0 rounded bg-gradient-to-r from-emerald-500 to-cyan-500"
+      />
+    </div>
+  );
+}
+
 
 
 
@@ -274,10 +388,29 @@ export default function Home() {
   ];
 
   const steps = [
-    { k: "1", title: "Discovery", desc: "Short scoping call to understand your operation, risks, and goals." },
-    { k: "2", title: "Audit & Action Plan", desc: "On-site/remote audit with a prioritized roadmap." },
-    { k: "3", title: "Embed & Monitor", desc: "Implement controls, train teams, and set up checks." },
+    {
+      k: "01",
+      title: "Discovery",
+      desc: "Short scoping call to understand your operation, risks, and goals.",
+      icon: Building2,
+      points: ["Fleet & sites profile", "Pain points & risks", "Quick-win opportunities"],
+    },
+    {
+      k: "02",
+      title: "Audit & Action Plan",
+      desc: "On-site/remote audit with a prioritized roadmap.",
+      icon: ClipboardCheck,
+      points: ["Evidence review", "Risk score by area", "Prioritised action list"],
+    },
+    {
+      k: "03",
+      title: "Embed & Monitor",
+      desc: "Implement controls, train teams, and set up checks.",
+      icon: TimerReset,
+      points: ["SOPs & training", "KPI/ER tracking", "Follow-up & support"],
+    },
   ];
+
 
   return (
     <>
@@ -351,48 +484,80 @@ export default function Home() {
 
 
       {/* FEATURES */}
-      <section className="mx-auto max-w-7xl px-6 py-16" id="services">
-        <div className="mb-10 flex items-end justify-between gap-4">
-          <div>
-            <h2 className="text-3xl sm:text-4xl font-semibold">What we do</h2>
-            <p className="mt-2 text-slate-600 dark:text-slate-400">Audits, advice, and embedded systems for sustained compliance.</p>
+      <div className="bg-gradient-to-b from-white to-emerald-50/30 dark:from-slate-950 dark:to-emerald-950/10">
+        <section className="mx-auto max-w-7xl px-6 py-16" id="services">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <span className="text-xs font-medium tracking-wider uppercase text-emerald-700/80 dark:text-emerald-300">
+                Services
+              </span>
+              <h2 className="text-3xl sm:text-4xl font-semibold">What we do</h2>
+              <p className="mt-2 text-slate-600 dark:text-slate-400">
+                Audits, advice, and embedded systems for sustained compliance.
+              </p>
+            </div>
+            <a
+              href="#contact"
+              className="text-emerald-700 hover:text-emerald-600 dark:text-emerald-300 dark:hover:text-emerald-200 inline-flex items-center gap-2 text-sm"
+            >
+              Talk to an expert <ArrowRight className="h-4 w-4" />
+            </a>
           </div>
-          <a href="#contact" className="text-emerald-700 hover:text-emerald-600 dark:text-emerald-300 dark:hover:text-emerald-200 inline-flex items-center gap-2 text-sm">
-            Talk to an expert <ArrowRight className="h-4 w-4" />
-          </a>
-        </div>
 
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {features.map((f, i) => (
-            <FlipCard key={f.title} {...f} />
-          ))}
+          {/* grey bar with gradient fill */}
+          <SectionRule />
 
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((f) => (
+              <FlipCard key={f.title} {...f} />
+            ))}
+          </div>
+        </section>
+      </div>
 
-        </div>
-      </section>
 
       {/* PROCESS */}
       <section className="mx-auto max-w-7xl px-6 py-16" id="process">
-        <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">Fully compliant in 3 simple steps</h2>
-        <div className="mt-8 grid gap-6 md:grid-cols-3">
-          {steps.map((s, i) => (
-            <motion.div
-              key={s.k}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ delay: i * 0.07 }}
-              className="rounded-2xl border p-6
-                border-slate-200 bg-gradient-to-b from-white to-slate-50
-                dark:border-white/10 dark:from-white/[0.06] dark:to-white/[0.03]"
-            >
-              <div className="text-sm text-slate-500 dark:text-slate-400"><strong>{s.k}</strong></div>
-              <h3 className="mt-1 text-xl font-semibold">{s.title}</h3>
-              <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">{s.desc}</p>
-            </motion.div>
-          ))}
+        <div className="mb-2">
+          <span className="text-xs font-medium tracking-wider uppercase text-emerald-700/80 dark:text-emerald-300">
+            How it works
+          </span>
+          <h2 className="mt-2 text-3xl sm:text-4xl font-semibold tracking-tight">
+            Fully compliant in 3 simple steps
+          </h2>
+          <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl">
+            A lightweight path from first conversation to embedded, auditable control.
+          </p>
+        </div>
+
+        {/* Progress bar bound to section scroll */}
+        <div ref={processRef => (window.__processRef = processRef)}>
+          <SectionProgress targetRef={typeof window !== "undefined" ? window.__processRef : null} />
+        </div>
+
+        {/* Connecting line behind cards (desktop) */}
+        <div className="relative">
+          <div className="
+      pointer-events-none absolute left-0 right-0 top-1/2 -z-10 hidden md:block
+      h-px bg-gradient-to-r from-transparent via-emerald-300/50 to-transparent
+      dark:via-emerald-400/30
+    " />
+          <div className="mt-8 grid gap-6 md:grid-cols-3">
+            {steps.map((s, i) => (
+              <ProcessStep
+                key={s.k}
+                index={i + 1}
+                title={s.title}
+                desc={s.desc}
+                Icon={s.icon}
+                points={s.points}
+              />
+            ))}
+          </div>
         </div>
       </section>
+
+
 
       {/* TESTIMONIAL 
       <section className="mx-auto max-w-5xl px-6 py-16">
@@ -414,12 +579,40 @@ export default function Home() {
       </section>*/}
 
       {/* CONTACT */}
-      <section id="contact" className="mx-auto max-w-6xl px-6 pb-20">
-        <div className="grid gap-8 lg:grid-cols-3">
-          <ContactCard />
-          <HomeContactForm />
+      <section id="contact" className="relative overflow-hidden">
+        {/* subtle background accents */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          <div className="absolute -top-24 -left-20 h-[34rem] w-[34rem]
+      bg-[radial-gradient(closest-side,theme(colors.emerald.300/.18),transparent)]
+      blur-3xl dark:bg-[radial-gradient(closest-side,theme(colors.emerald.500/.14),transparent)]" />
+          <div className="absolute -bottom-28 -right-16 h-[28rem] w-[28rem]
+      bg-[radial-gradient(closest-side,theme(colors.cyan.300/.16),transparent)]
+      blur-3xl dark:bg-[radial-gradient(closest-side,theme(colors.cyan.400/.12),transparent)]" />
+        </div>
+
+        <div className="mx-auto max-w-7xl px-6 py-20">
+          {/* left-aligned heading to match site */}
+          <div className="mb-6">
+            <span className="text-xs font-medium tracking-wider uppercase text-emerald-700/80 dark:text-emerald-300">
+              Contact
+            </span>
+            <h2 className="mt-2 text-3xl sm:text-4xl font-semibold">Speak with CTRL</h2>
+            <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl">
+              Tell us a bit about your operation and we’ll suggest a sensible starting point.
+            </p>
+          </div>
+
+          {/* grey bar with gradient fill */}
+          <SectionRule />
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            <ContactCard />
+            <HomeContactForm />
+          </div>
         </div>
       </section>
+
+
     </>
   );
 }
@@ -439,29 +632,75 @@ function CTAButton({ children, primary }) {
 }
 function HomeContactForm() {
   const [email, setEmail] = useState("");
+
   return (
-    <form
-      onSubmit={(e) => { e.preventDefault(); alert(`Thanks! We'll be in touch at: ${email}`); setEmail(""); }}
-      className="lg:col-span-2 rounded-3xl border p-8
-        border-slate-200 bg-gradient-to-b from-white to-slate-50
-        dark:border-white/10 dark:from-white/[0.06] dark:to-white/[0.03]"
-    >
-      <div className="grid gap-6 sm:grid-cols-2">
-        <Field label="Full name"><input required className="field" placeholder="Alex Smith" /></Field>
-        <Field label="Company"><input className="field" placeholder="Acme Logistics" /></Field>
-        <Field label="Email"><input type="email" required className="field" placeholder="you@company.co.uk" value={email} onChange={(e) => setEmail(e.target.value)} /></Field>
-        <Field label="Fleet size">
-          <select className="field"><option>1–10</option><option>11–50</option><option>51–150</option><option>151+</option></select>
-        </Field>
-        <Field label="What do you need?" full><textarea rows={5} className="field" placeholder="Audit, tachograph analysis, training, ER readiness..." /></Field>
-      </div>
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <p className="text-xs text-slate-500 dark:text-slate-400">By submitting, you agree to be contacted about CTRL services.</p>
-        <button className="btn-primary">Send enquiry</button>
-      </div>
-    </form>
+    <div className="lg:col-span-2 rounded-3xl p-[1px]
+      bg-gradient-to-br from-emerald-300/40 via-cyan-300/40 to-transparent
+      dark:from-emerald-400/30 dark:via-cyan-400/30 dark:to-transparent">
+      <form
+        onSubmit={(e) => { e.preventDefault(); alert(`Thanks! We'll be in touch at: ${email}`); setEmail(""); }}
+        className="relative rounded-3xl border p-8
+          border-slate-200 bg-gradient-to-b from-white to-slate-50
+          dark:border-white/10 dark:from-white/[0.06] dark:to-white/[0.03]"
+      >
+        {/* cursor-following soft spotlight (no transforms) */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-3xl"
+          onMouseMove={(e) => {
+            const el = e.currentTarget;
+            const rect = el.getBoundingClientRect();
+            const x = ((e.clientX - rect.left) / rect.width) * 100;
+            const y = ((e.clientY - rect.top) / rect.height) * 100;
+            el.style.setProperty("--mx", `${x}%`);
+            el.style.setProperty("--my", `${y}%`);
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.removeProperty("--mx");
+            e.currentTarget.style.removeProperty("--my");
+          }}
+          style={{
+            background:
+              "radial-gradient(420px 200px at var(--mx,50%) var(--my,0%), rgba(16,185,129,0.08), transparent 60%)",
+            maskImage:
+              "radial-gradient(400px 180px at var(--mx,50%) var(--my,0%), rgba(0,0,0,0.9), transparent 70%)",
+          }}
+        />
+
+        <div className="grid gap-6 sm:grid-cols-2 relative">
+          <Field label="Full name"><input required className="field" placeholder="Alex Smith" /></Field>
+          <Field label="Company"><input className="field" placeholder="Acme Logistics" /></Field>
+          <Field label="Email">
+            <input
+              type="email"
+              required
+              className="field"
+              placeholder="you@company.co.uk"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </Field>
+          <Field label="Fleet size">
+            <select className="field">
+              <option>1–10</option><option>11–50</option>
+              <option>51–150</option><option>151+</option>
+            </select>
+          </Field>
+          <Field label="What do you need?" full>
+            <textarea rows={5} className="field" placeholder="Audit, tachograph analysis, training, ER readiness..." />
+          </Field>
+        </div>
+
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            By submitting, you agree to be contacted about CTRL services.
+          </p>
+          <button className="btn-primary">Send enquiry</button>
+        </div>
+      </form>
+    </div>
   );
 }
+
 function Field({ label, children, full }) {
   return (
     <label className={(full ? "sm:col-span-2 " : "") + "flex flex-col gap-2"}>
@@ -472,18 +711,75 @@ function Field({ label, children, full }) {
 }
 function ContactCard() {
   return (
-    <div className="rounded-3xl border p-8
-      border-slate-200 bg-white text-slate-800
-      dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
-      <h3 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">Speak with CTRL</h3>
-      <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">Tell us a bit about your operation and we’ll suggest a sensible starting point.</p>
-      <div className="mt-6 flex flex-col gap-3 text-sm text-slate-700 dark:text-slate-300">
-        <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300" href="tel:+443301338986"><Phone className="h-4 w-4" />03301338986</a>
-        <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300" href="mailto:daniel@ctrlcompliance.co.uk"><Mail className="h-4 w-4" />daniel@ctrlcompliance.co.uk</a>
+    <div className="rounded-3xl p-[1px]
+      bg-gradient-to-br from-emerald-300/40 via-cyan-300/40 to-transparent
+      dark:from-emerald-400/30 dark:via-cyan-400/30 dark:to-transparent">
+      <div className="rounded-3xl border p-8 h-full
+        border-slate-200 bg-white text-slate-800
+        dark:border-white/10 dark:bg-white/[0.04] dark:text-slate-300">
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="text-2xl font-semibold text-slate-900 dark:text-slate-100">
+            Get in touch
+          </h3>
+          <div className="h-9 w-9 grid place-items-center rounded-xl border
+            border-emerald-300/50 bg-emerald-50 text-emerald-700
+            dark:border-emerald-400/40 dark:bg-emerald-400/15 dark:text-emerald-200">
+            <ShieldCheck className="h-5 w-5" />
+          </div>
+        </div>
+
+        <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">
+          Quick responses, straight answers.
+        </p>
+
+        {/* Divider */}
+        <div className="mt-6 h-px bg-gradient-to-r from-emerald-200/60 via-slate-200/40 to-transparent
+          dark:from-emerald-300/20 dark:via-white/10" />
+
+        {/* Channels */}
+        <div className="mt-6 flex flex-col gap-3 text-sm">
+          <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300"
+            href="tel:+443301338986">
+            <Phone className="h-4 w-4" />
+            03301338986
+          </a>
+          <a className="inline-flex items-center gap-2 hover:text-emerald-700 dark:hover:text-emerald-300"
+            href="mailto:daniel@ctrlcompliance.co.uk">
+            <Mail className="h-4 w-4" />
+            daniel@ctrlcompliance.co.uk
+          </a>
+        </div>
+
+        {/* Badges */}
+        <div className="mt-6 flex flex-wrap gap-2">
+          <span className="rounded-full px-2.5 py-1 text-[11px]
+            bg-emerald-500/10 text-emerald-700 border border-emerald-500/20
+            dark:bg-emerald-400/15 dark:text-emerald-200 dark:border-emerald-400/25">
+            UK-wide
+          </span>
+          <span className="rounded-full px-2.5 py-1 text-[11px]
+            bg-emerald-500/10 text-emerald-700 border border-emerald-500/20
+            dark:bg-emerald-400/15 dark:text-emerald-200 dark:border-emerald-400/25">
+            SME → Enterprise
+          </span>
+          <span className="rounded-full px-2.5 py-1 text-[11px]
+            bg-emerald-500/10 text-emerald-700 border border-emerald-500/20
+            dark:bg-emerald-400/15 dark:text-emerald-200 dark:border-emerald-400/25">
+            Confidential & independent
+          </span>
+        </div>
+
+        {/* Small note */}
+        <p className="mt-6 text-xs text-slate-500 dark:text-slate-400">
+          Prefer email? We usually reply the same day.
+        </p>
       </div>
     </div>
   );
 }
+
 function HeroCard() {
   const items = [
     { label: "Audit scope", value: "Drivers’ hours • WTD • PMIs • Defects" },
