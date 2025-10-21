@@ -467,7 +467,8 @@ export default function Home() {
               <p className="mt-6 text-slate-600 dark:text-slate-300 max-w-xl">
                 We help transport operators build practical systems that pass scrutiny—without slowing the operation.
               </p>
-              <div className="mt-8 flex flex-col sm:flex-row gap-3">
+              {/*<div className="mt-8 flex flex-col sm:flex-row gap-3">*/}
+                <div className="mt-6 grid grid-cols-1 sm:flex sm:flex-row gap-2 sm:gap-3">
                 <CTAButton primary>Book an intro call</CTAButton>
                 <CTAButton>See audit checklist</CTAButton>
               </div>
@@ -628,65 +629,161 @@ function Badge({ children }) {
   );
 }
 function CTAButton({ children, primary }) {
-  return <button className={primary ? "btn-primary" : "btn-outline"}>{children}</button>;
+  const base =
+    "inline-flex items-center justify-center rounded-xl px-4 py-2 min-h-11 text-sm font-medium transition " +
+    "focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50 active:scale-[.99]";
+  const variantPrimary =
+    "border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 hover:bg-emerald-500/15 " +
+    "dark:border-emerald-400/30 dark:bg-emerald-400/20 dark:text-emerald-200 dark:hover:bg-emerald-400/25";
+  const variantOutline =
+    "border border-slate-300 bg-white text-slate-900 hover:bg-slate-50 " +
+    "dark:border-white/15 dark:bg-white/5 dark:text-slate-100 dark:hover:bg-white/10";
+
+  return (
+    <button className={`${base} ${primary ? variantPrimary : variantOutline}`}>
+      {children}
+    </button>
+  );
 }
 function HomeContactForm() {
-  const [email, setEmail] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    company: "",
+    email: "",
+    fleetSize: "",
+    message: "",
+    website: "", // honeypot (keep empty)
+  });
+  const [status, setStatus] = useState({ state: "idle", msg: "" });
+
+  // Works with either env.js (window.__ENV) or Vite env
+  const API_ROOT = (
+    (typeof window !== "undefined" && window.__ENV && window.__ENV.VITE_API_BASE) ||
+    import.meta.env.VITE_API_BASE ||
+    ""
+  ).replace(/\/+$/, ""); // trim trailing slash
+
+  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
+
+  async function onSubmit(e) {
+    e.preventDefault();
+    setStatus({ state: "loading", msg: "Sending…" });
+
+    try {
+      if (!API_ROOT) {
+        throw new Error("API base URL not set. Ask us to fix VITE_API_BASE.");
+      }
+
+      const res = await fetch(`${API_ROOT}/contact`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+
+      // Honeypot → API returns 204; treat as success but stay quiet
+      if (res.status === 204) {
+        setStatus({ state: "success", msg: "Thanks! We’ll be in touch shortly." });
+        setForm({ name: "", company: "", email: "", fleetSize: "", message: "", website: "" });
+        return;
+      }
+
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        // surface server validation nicely if present
+        const detail = body?.error || `Request failed (${res.status})`;
+        throw new Error(detail);
+      }
+
+      setStatus({ state: "success", msg: "Thanks! We’ll be in touch shortly." });
+      setForm({ name: "", company: "", email: "", fleetSize: "", message: "", website: "" });
+    } catch (err) {
+      setStatus({
+        state: "error",
+        msg:
+          err?.message === "Failed to fetch"
+            ? "Network error—check your connection and try again."
+            : err?.message || "Something went wrong.",
+      });
+    }
+  }
 
   return (
     <div className="lg:col-span-2 rounded-3xl p-[1px]
       bg-gradient-to-br from-emerald-300/40 via-cyan-300/40 to-transparent
       dark:from-emerald-400/30 dark:via-cyan-400/30 dark:to-transparent">
       <form
-        onSubmit={(e) => { e.preventDefault(); alert(`Thanks! We'll be in touch at: ${email}`); setEmail(""); }}
+        onSubmit={onSubmit}
         className="relative rounded-3xl border p-8
           border-slate-200 bg-gradient-to-b from-white to-slate-50
           dark:border-white/10 dark:from-white/[0.06] dark:to-white/[0.03]"
       >
-        {/* cursor-following soft spotlight (no transforms) */}
-        <div
-          className="pointer-events-none absolute inset-0 rounded-3xl"
-          onMouseMove={(e) => {
-            const el = e.currentTarget;
-            const rect = el.getBoundingClientRect();
-            const x = ((e.clientX - rect.left) / rect.width) * 100;
-            const y = ((e.clientY - rect.top) / rect.height) * 100;
-            el.style.setProperty("--mx", `${x}%`);
-            el.style.setProperty("--my", `${y}%`);
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.removeProperty("--mx");
-            e.currentTarget.style.removeProperty("--my");
-          }}
-          style={{
-            background:
-              "radial-gradient(420px 200px at var(--mx,50%) var(--my,0%), rgba(16,185,129,0.08), transparent 60%)",
-            maskImage:
-              "radial-gradient(400px 180px at var(--mx,50%) var(--my,0%), rgba(0,0,0,0.9), transparent 70%)",
-          }}
+        {/* HONEYPOT (keep hidden, tab-stop removed) */}
+        <input
+          type="text"
+          name="website"
+          autoComplete="off"
+          tabIndex="-1"
+          value={form.website}
+          onChange={set("website")}
+          className="hidden"
+          aria-hidden="true"
         />
 
         <div className="grid gap-6 sm:grid-cols-2 relative">
-          <Field label="Full name"><input required className="field" placeholder="Alex Smith" /></Field>
-          <Field label="Company"><input className="field" placeholder="Acme Logistics" /></Field>
+          <Field label="Full name">
+            <input
+              required
+              className="field"
+              placeholder="Alex Smith"
+              value={form.name}
+              onChange={set("name")}
+            />
+          </Field>
+
+          <Field label="Company">
+            <input
+              className="field"
+              placeholder="Acme Logistics"
+              value={form.company}
+              onChange={set("company")}
+            />
+          </Field>
+
           <Field label="Email">
             <input
               type="email"
               required
               className="field"
               placeholder="you@company.co.uk"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={form.email}
+              onChange={set("email")}
             />
           </Field>
+
           <Field label="Fleet size">
-            <select className="field">
-              <option>1–10</option><option>11–50</option>
-              <option>51–150</option><option>151+</option>
+            <select
+              className="field"
+              value={form.fleetSize}
+              onChange={set("fleetSize")}
+            >
+              <option value="">Select…</option>
+              <option>1–10</option>
+              <option>11–50</option>
+              <option>51–150</option>
+              <option>151+</option>
             </select>
           </Field>
+
           <Field label="What do you need?" full>
-            <textarea rows={5} className="field" placeholder="Audit, tachograph analysis, training, ER readiness..." />
+            <textarea
+              rows={5}
+              required
+              minLength={5} // aligns with Zod schema (>=5)
+              className="field"
+              placeholder="Audit, tachograph analysis, training, ER readiness..."
+              value={form.message}
+              onChange={set("message")}
+            />
           </Field>
         </div>
 
@@ -694,12 +791,30 @@ function HomeContactForm() {
           <p className="text-xs text-slate-500 dark:text-slate-400">
             By submitting, you agree to be contacted about CTRL services.
           </p>
-          <button className="btn-primary">Send enquiry</button>
+          <button className="btn-primary" disabled={status.state === "loading"}>
+            {status.state === "loading" ? "Sending…" : "Send enquiry"}
+          </button>
         </div>
+
+        {status.state !== "idle" && (
+          <p
+            className={
+              "mt-3 text-sm " +
+              (status.state === "success"
+                ? "text-emerald-700 dark:text-emerald-300"
+                : status.state === "error"
+                ? "text-rose-600 dark:text-rose-400"
+                : "text-slate-500")
+            }
+          >
+            {status.msg}
+          </p>
+        )}
       </form>
     </div>
   );
 }
+
 
 function Field({ label, children, full }) {
   return (
