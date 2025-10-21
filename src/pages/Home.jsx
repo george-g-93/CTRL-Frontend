@@ -20,7 +20,44 @@ const styles = `
 .field { @apply w-full rounded-xl px-3 py-2 outline-none ring-0
   border border-slate-300 bg-white placeholder:text-slate-500 focus:border-emerald-500/40
   dark:border-white/10 dark:bg-white/5 dark:placeholder:text-slate-400 dark:focus:border-emerald-400/40; }
+
+/* Card flip effect */
+.flip-container {
+  perspective: 1000px;
+  cursor: pointer;
+  height: 100%;
+  position: relative;
+}
+
+.flipper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transition: transform 0.6s;
+  transform-style: preserve-3d;
+}
+
+.flip-container.flipped .flipper {
+  transform: rotateY(180deg);
+}
+
+.flip-front,
+.flip-back {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  backface-visibility: hidden;
+  border-radius: 1rem;
+}
+
+.flip-back {
+  transform: rotateY(180deg);
+}
 `;
+
+
+
 if (typeof document !== "undefined" && !document.getElementById("ctrl-styles")) {
   const style = document.createElement("style");
   style.id = "ctrl-styles";
@@ -28,35 +65,128 @@ if (typeof document !== "undefined" && !document.getElementById("ctrl-styles")) 
   document.head.appendChild(style);
 }
 
+function FlipCard({ icon, title, desc, backInfo }) {
+  const [flipped, setFlipped] = useState(false);
+
+  return (
+    <div
+      className="relative cursor-pointer [perspective:1000px]"
+      onClick={() => setFlipped((v) => !v)}
+    >
+      {/* Rotating wrapper */}
+      <div
+        className={[
+          "relative w-full h-64 sm:h-72 md:h-80 transition-transform duration-500",
+          "[transform-style:preserve-3d]",
+          flipped ? "[transform:rotateY(180deg)]" : "",
+        ].join(" ")}
+      >
+        {/* FRONT */}
+        <div className="absolute inset-0 rounded-2xl border p-6 backdrop-blur
+                        border-slate-200 bg-white shadow-sm
+                        dark:border-white/10 dark:bg-white/5 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]
+                        [backface-visibility:hidden]">
+          <div
+            className="flex items-center justify-center h-11 w-11 rounded-xl border
+                       border-slate-200 bg-slate-100
+                       dark:border-black/10 dark:bg-gradient-to-br dark:from-emerald-400/20 dark:to-cyan-400/20
+                       [&>svg]:!text-black dark:[&>svg]:!text-black"
+          >
+            {icon}
+          </div>
+          <h3 className="mt-4 text-lg font-semibold text-transparent bg-clip-text
+                         bg-gradient-to-r from-emerald-600 to-cyan-600
+                         dark:from-emerald-300 dark:to-cyan-400">
+            {title}
+          </h3>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{desc}</p>
+          <p className="mt-auto text-xs text-slate-400 dark:text-slate-500 mt-4">(Click for more)</p>
+        </div>
+
+        {/* BACK */}
+        <div className="absolute inset-0 rounded-2xl border p-6
+                        border-slate-200 bg-gradient-to-b from-emerald-50 to-cyan-50
+                        dark:border-white/10 dark:from-emerald-900/20 dark:to-cyan-900/20
+                        [backface-visibility:hidden] [transform:rotateY(180deg)]">
+          <h4 className="text-base font-semibold text-transparent bg-clip-text
+                         bg-gradient-to-r from-emerald-600 to-cyan-600
+                         dark:from-emerald-300 dark:to-cyan-400 mb-2">
+            {title}
+          </h4>
+          <p className="text-sm text-slate-700 dark:text-slate-300 text-center">
+            {/*More detailed information about <strong>{title}</strong> can go here — e.g., key benefits, approach, or what’s included.*/}
+            {backInfo}
+          </p>
+          <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">(Click again to flip back)</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+
+
 export default function Home() {
   const features = [
-    { icon: <ShieldCheck className="h-6 w-6" aria-hidden />, title: "Operator Licence Support", desc: "Policies, systems, and evidence packs aligned to DVSA expectations." },
-    { icon: <ClipboardCheck className="h-6 w-6" aria-hidden />, title: "Independent Compliance Audits", desc: "End-to-end reviews of maintenance, drivers’ hours, and record-keeping." },
-    { icon: <FileSpreadsheet className="h-6 w-6" aria-hidden />, title: "Tachograph & Working Time Analysis", desc: "Infringement detection and corrective actions." },
-    { icon: <TimerReset className="h-6 w-6" aria-hidden />, title: "Earned Recognition Readiness", desc: "Gap analysis and continuous monitoring to stay audit-ready." },
-    { icon: <Truck className="h-6 w-6" aria-hidden />, title: "Maintenance & Defect Systems", desc: "Robust PMI, defect, and recall controls." },
-    { icon: <BookOpenCheck className="h-6 w-6" aria-hidden />, title: "Training & Toolbox Talks", desc: "Practical sessions for drivers and transport managers." },
+    { icon: <ShieldCheck className="h-6 w-6" aria-hidden />, title: "Operator Licence Support", desc: "Policies, systems, and evidence packs aligned to DVSA expectations.", backInfo: "We help you stay on the right side of the Traffic Commissioner by ensuring your systems meet all Operator Licence undertakings. From building bespoke policy and procedure packs to setting up digital maintenance and driver record systems. Whether you’re applying for a new licence, facing a Public Inquiry, or simply tightening your systems, our team provides the expertise to keep your licence safe and your operation running smoothly." },
+    { icon: <ClipboardCheck className="h-6 w-6" aria-hidden />, title: "Independent Compliance Audits", desc: "End-to-end reviews of maintenance, drivers’ hours, and record-keeping.", backInfo: "Our audits provide a full, unbiased view of your transport compliance. We review everything from maintenance and driver hours to daily defect reporting, working time, and record-keeping. You’ll receive a detailed written report with clear, prioritised actions to close any gaps and demonstrate proactive management to the DVSA or Traffic Commissioner. Ideal for peace of mind, internal checks, or Earned Recognition evidence." },
+    { icon: <FileSpreadsheet className="h-6 w-6" aria-hidden />, title: "Tachograph & Working Time Analysis", desc: "Infringement detection and corrective actions.", backInfo: "We analyse driver card and vehicle unit data to detect infringements, fatigue risks, and poor scheduling practices before they escalate. You’ll receive clear, actionable reports that help you manage driver performance, plan corrective actions, and improve scheduling efficiency. Our systems also help you demonstrate control and due diligence, key factors in any DVSA visit or operator licence review." },
+    { icon: <TimerReset className="h-6 w-6" aria-hidden />, title: "Earned Recognition Readiness", desc: "Gap analysis and continuous monitoring to stay audit-ready.", backInfo: "If you’re working toward DVSA Earned Recognition status, we’ll assess your systems against the scheme’s standards. Our gap analysis identifies areas needing improvement, and our continuous monitoring helps ensure ongoing compliance. From KPI tracking to audit-ready documentation, we’ll position your operation to achieve recognition and showcase your commitment to excellence." },
+    { icon: <Truck className="h-6 w-6" aria-hidden />, title: "Maintenance & Defect Systems", desc: "Robust PMI, defect, and recall controls.", backInfo: "We build and review maintenance regimes that meet DVSA standards — covering PMIs, driver walkaround checks, defect reporting, and recall management. Our team ensures your paperwork (digital or paper-based) aligns with OCRS and Earned Recognition expectations. We can also assist in implementing digital defect systems, maintenance planners, and escalation procedures to reduce downtime and risk." },
+    { icon: <BookOpenCheck className="h-6 w-6" aria-hidden />, title: "Training & Toolbox Talks", desc: "Practical sessions for drivers and transport managers.", backInfo: "We deliver practical training sessions for drivers, transport managers, and supervisors on key compliance areas — from daily defect checks and drivers’ hours to load security, bridge strikes, and operator licence awareness. Sessions can be tailored to your business and delivered onsite or online, helping you build a stronger safety culture and keep compliance front of mind." },
   ];
   const steps = [
-    { k: "01", title: "Discovery", desc: "Short scoping call to understand your operation, risks, and goals." },
-    { k: "02", title: "Audit & Action Plan", desc: "On-site/remote audit with a prioritized roadmap." },
-    { k: "03", title: "Embed & Monitor", desc: "Implement controls, train teams, and set up checks." },
+    { k: "1", title: "Discovery", desc: "Short scoping call to understand your operation, risks, and goals." },
+    { k: "2", title: "Audit & Action Plan", desc: "On-site/remote audit with a prioritized roadmap." },
+    { k: "3", title: "Embed & Monitor", desc: "Implement controls, train teams, and set up checks." },
   ];
 
   return (
     <>
       {/* HERO */}
-      <section className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10">
-          {/* Softer in light, vibrant in dark */}
-          <div className="h-[60rem] w-[60rem] blur-3xl translate-x-1/2 -translate-y-1/3 opacity-70
-            bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))]
-            from-emerald-300/15 via-cyan-300/15 to-transparent
-            dark:from-emerald-500/10 dark:via-cyan-500/10" />
+      <section
+        className="
+    relative overflow-hidden
+    bg-gradient-to-b from-emerald-50 via-cyan-50 to-white
+    dark:from-slate-950 dark:via-emerald-950/30 dark:to-slate-950
+  "
+      >
+        {/* Decorative background layers */}
+        <div className="pointer-events-none absolute inset-0 -z-10">
+          {/* Soft blobs */}
+          <div className="
+      absolute -top-24 -right-20 h-[42rem] w-[42rem]
+      bg-[radial-gradient(closest-side,theme(colors.emerald.300/.25),transparent)]
+      blur-3xl
+      dark:bg-[radial-gradient(closest-side,theme(colors.emerald.500/.18),transparent)]
+    " />
+          <div className="
+      absolute -bottom-32 -left-24 h-[36rem] w-[36rem]
+      bg-[radial-gradient(closest-side,theme(colors.cyan.300/.22),transparent)]
+      blur-3xl
+      dark:bg-[radial-gradient(closest-side,theme(colors.cyan.400/.16),transparent)]
+    " />
+
+          {/* Subtle grid (masked so it fades out) */}
+          <div
+            className="
+        absolute inset-0 opacity-25 dark:opacity-10
+        bg-[linear-gradient(0deg,rgba(15,23,42,0.06)_1px,transparent_1px),linear-gradient(90deg,rgba(15,23,42,0.06)_1px,transparent_1px)]
+        bg-[size:28px_28px,28px_28px]
+        [mask-image:radial-gradient(60%_60%_at_50%_10%,black,transparent_70%)]
+      "
+          />
         </div>
 
         <div className="mx-auto max-w-7xl px-6 pt-20 pb-12 sm:pt-28">
-          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="grid items-center gap-10 lg:grid-cols-2">
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="grid items-center gap-10 lg:grid-cols-2"
+          >
             <div>
               <Badge>Transport Auditing & Compliance</Badge>
               <h1 className="mt-4 text-4xl font-semibold tracking-tight sm:text-5xl md:text-6xl">
@@ -83,24 +213,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* LOGO STRIP 
-      <section className="mx-auto max-w-7xl px-6 py-10">
-        <p className="text-center text-sm text-slate-500 dark:text-slate-400 mb-6">
-          Trusted by operations across logistics, retail, construction, and field services
-        </p>
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-6 opacity-90">
-          {[Building2, Truck, LineChart, ShieldCheck, ClipboardCheck, FileSpreadsheet].map((I, idx) => (
-            <div
-              key={idx}
-              className="flex items-center justify-center rounded-2xl border py-4
-              border-slate-200 bg-white
-              dark:border-white/10 dark:bg-white/5"
-            >
-              <I className="h-6 w-6 text-slate-600 dark:text-slate-200" />
-            </div>
-          ))}
-        </div>
-      </section>*/}
 
       {/* FEATURES */}
       <section className="mx-auto max-w-7xl px-6 py-16" id="services">
@@ -116,28 +228,10 @@ export default function Home() {
 
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((f, i) => (
-            <motion.div
-              key={f.title}
-              initial={{ opacity: 0, y: 8 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.3 }}
-              transition={{ delay: i * 0.05 }}
-              className="rounded-2xl border p-6 backdrop-blur
-                border-slate-200 bg-white shadow-sm
-                dark:border-white/10 dark:bg-white/5 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]"
-            >
-              <div
-                className="flex items-center justify-center h-11 w-11 rounded-xl border
-             border-slate-200 bg-slate-100
-             dark:border-black/10 dark:bg-gradient-to-br dark:from-emerald-400/20 dark:to-cyan-400/20
-             [&>svg]:!text-black dark:[&>svg]:!text-black"
-              >
-                {f.icon}
-              </div>
-              <h3 className="mt-4 text-lg font-semibold">{f.title}</h3>
-              <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{f.desc}</p>
-            </motion.div>
+            <FlipCard key={f.title} {...f} />
           ))}
+
+
         </div>
       </section>
 
@@ -156,7 +250,7 @@ export default function Home() {
                 border-slate-200 bg-gradient-to-b from-white to-slate-50
                 dark:border-white/10 dark:from-white/[0.06] dark:to-white/[0.03]"
             >
-              <div className="text-sm text-slate-500 dark:text-slate-400">{s.k}</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400"><strong>{s.k}</strong></div>
               <h3 className="mt-1 text-xl font-semibold">{s.title}</h3>
               <p className="mt-2 text-slate-600 dark:text-slate-300 text-sm">{s.desc}</p>
             </motion.div>
