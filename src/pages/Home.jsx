@@ -65,7 +65,7 @@ if (typeof document !== "undefined" && !document.getElementById("ctrl-styles")) 
   document.head.appendChild(style);
 }
 
-function FlipCard({ icon, title, desc, backInfo }) {
+function FlipCard({ icon, title, desc, backPoints = [], tags = [], href }) {
   const [flipped, setFlipped] = useState(false);
 
   return (
@@ -73,51 +73,123 @@ function FlipCard({ icon, title, desc, backInfo }) {
       className="relative cursor-pointer [perspective:1000px]"
       onClick={() => setFlipped((v) => !v)}
     >
-      {/* Rotating wrapper */}
-      <div
-        className={[
-          "relative w-full h-64 sm:h-72 md:h-80 transition-transform duration-500",
-          "[transform-style:preserve-3d]",
-          flipped ? "[transform:rotateY(180deg)]" : "",
-        ].join(" ")}
-      >
-        {/* FRONT */}
-        <div className="absolute inset-0 rounded-2xl border p-6 backdrop-blur
-                        border-slate-200 bg-white shadow-sm
-                        dark:border-white/10 dark:bg-white/5 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]
-                        [backface-visibility:hidden]">
-          <div
-            className="flex items-center justify-center h-11 w-11 rounded-xl border
-                       border-slate-200 bg-slate-100
-                       dark:border-black/10 dark:bg-gradient-to-br dark:from-emerald-400/20 dark:to-cyan-400/20
-                       [&>svg]:!text-black dark:[&>svg]:!text-black"
-          >
-            {icon}
-          </div>
-          <h3 className="mt-4 text-lg font-semibold text-transparent bg-clip-text
-                         bg-gradient-to-r from-emerald-600 to-cyan-600
-                         dark:from-emerald-300 dark:to-cyan-400">
-            {title}
-          </h3>
-          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{desc}</p>
-          <p className="mt-auto text-xs text-slate-400 dark:text-slate-500 mt-4">(Click for more)</p>
-        </div>
+      {/* Gradient ring + hover glow */}
+      <div className="rounded-2xl p-[1px] transition-shadow duration-300
+                      bg-gradient-to-br from-emerald-300/40 via-cyan-300/40 to-transparent
+                      dark:from-emerald-400/30 dark:via-cyan-400/30 dark:to-transparent
+                      hover:shadow-[0_10px_40px_-12px_rgba(16,185,129,0.35)]">
+        {/* Rotating wrapper */}
+        <div
+          className={[
+            "relative w-full h-64 sm:h-72 md:h-80 transition-transform duration-500",
+            "[transform-style:preserve-3d]",
+            flipped ? "[transform:rotateY(180deg)]" : "",
+          ].join(" ")}
+        >
+          {/* FRONT */}
+          <div className="absolute inset-0 rounded-2xl border px-6 py-5 backdrop-blur
+                          border-slate-200 bg-white shadow-sm
+                          dark:border-white/10 dark:bg-white/5 dark:shadow-[0_0_0_1px_rgba(255,255,255,0.04)]
+                          [backface-visibility:hidden]">
+            <div className="flex items-center justify-between">
+              <div
+                className="flex items-center justify-center h-11 w-11 rounded-xl border
+                           border-slate-200 bg-slate-100
+                           dark:border-black/10 dark:bg-gradient-to-br dark:from-emerald-400/20 dark:to-cyan-400/20
+                           [&>svg]:!text-black dark:[&>svg]:!text-black"
+              >
+                {icon}
+              </div>
+              <span className="text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">
+                Click to flip
+              </span>
+            </div>
 
-        {/* BACK */}
-        <div className="absolute inset-0 rounded-2xl border p-6
-                        border-slate-200 bg-gradient-to-b from-emerald-50 to-cyan-50
-                        dark:border-white/10 dark:from-emerald-900/20 dark:to-cyan-900/20
-                        [backface-visibility:hidden] [transform:rotateY(180deg)]">
-          <h4 className="text-base font-semibold text-transparent bg-clip-text
-                         bg-gradient-to-r from-emerald-600 to-cyan-600
-                         dark:from-emerald-300 dark:to-cyan-400 mb-2">
-            {title}
-          </h4>
-          <p className="text-sm text-slate-700 dark:text-slate-300 text-center">
-            {/*More detailed information about <strong>{title}</strong> can go here — e.g., key benefits, approach, or what’s included.*/}
-            {backInfo}
-          </p>
-          <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">(Click again to flip back)</p>
+            <h3 className="mt-4 text-lg font-semibold text-transparent bg-clip-text
+                           bg-gradient-to-r from-emerald-600 to-cyan-600
+                           dark:from-emerald-300 dark:to-cyan-400">
+              {title}
+            </h3>
+
+            {/* Clamp to tidy lengths */}
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300 line-clamp-3">
+              {desc}
+            </p>
+
+            {/* Mini divider */}
+            <div className="mt-4 h-px bg-gradient-to-r from-emerald-200/60 via-slate-200/40 to-transparent
+                            dark:from-emerald-300/20 dark:via-white/10" />
+
+            {/* Optional quick tags preview (first 2) */}
+            {tags?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {tags.slice(0, 2).map((t) => (
+                  <span
+                    key={t}
+                    className="rounded-full px-2 py-0.5 text-[11px]
+                               bg-emerald-500/10 text-emerald-700 border border-emerald-500/20
+                               dark:bg-emerald-400/15 dark:text-emerald-200 dark:border-emerald-400/25"
+                  >
+                    {t}
+                  </span>
+                ))}
+                {tags.length > 2 && (
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">+{tags.length - 2}</span>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* BACK */}
+          <div className="absolute inset-0 rounded-2xl border px-6 py-5
+                          border-slate-200 bg-gradient-to-b from-emerald-50 to-cyan-50
+                          dark:border-white/10 dark:from-emerald-900/20 dark:to-cyan-900/20
+                          [backface-visibility:hidden] [transform:rotateY(180deg)]">
+            <h4 className="text-base font-semibold text-transparent bg-clip-text
+                           bg-gradient-to-r from-emerald-600 to-cyan-600
+                           dark:from-emerald-300 dark:to-cyan-400">
+              What you’ll get
+            </h4>
+
+            {/* Bullet list */}
+            <ul className="mt-3 space-y-2">
+              {backPoints.map((bp) => (
+                <li key={bp} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+                  <CheckCircle2 className="mt-[2px] h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+                  <span>{bp}</span>
+                </li>
+              ))}
+            </ul>
+
+            {/* Tags */}
+            {tags?.length > 0 && (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {tags.map((t) => (
+                  <span
+                    key={t}
+                    className="rounded-full px-2 py-0.5 text-[11px]
+                               bg-white/60 text-slate-700 border border-white
+                               dark:bg-white/10 dark:text-slate-200 dark:border-white/10"
+                  >
+                    {t}
+                  </span>
+                ))}
+              </div>
+            )}
+
+            {/* Optional CTA */}
+            {href && (
+              <a
+                href={href}
+                className="mt-4 inline-flex items-center gap-2 text-sm font-medium
+                           text-emerald-700 hover:text-emerald-600
+                           dark:text-emerald-300 dark:hover:text-emerald-200"
+                onClick={(e) => e.stopPropagation()}
+              >
+                Learn more <ArrowRight className="h-4 w-4" />
+              </a>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -128,15 +200,79 @@ function FlipCard({ icon, title, desc, backInfo }) {
 
 
 
+
 export default function Home() {
   const features = [
-    { icon: <ShieldCheck className="h-6 w-6" aria-hidden />, title: "Operator Licence Support", desc: "Policies, systems, and evidence packs aligned to DVSA expectations.", backInfo: "We help you stay on the right side of the Traffic Commissioner by ensuring your systems meet all Operator Licence undertakings. From building bespoke policy and procedure packs to setting up digital maintenance and driver record systems. Whether you’re applying for a new licence, facing a Public Inquiry, or simply tightening your systems, our team provides the expertise to keep your licence safe and your operation running smoothly." },
-    { icon: <ClipboardCheck className="h-6 w-6" aria-hidden />, title: "Independent Compliance Audits", desc: "End-to-end reviews of maintenance, drivers’ hours, and record-keeping.", backInfo: "Our audits provide a full, unbiased view of your transport compliance. We review everything from maintenance and driver hours to daily defect reporting, working time, and record-keeping. You’ll receive a detailed written report with clear, prioritised actions to close any gaps and demonstrate proactive management to the DVSA or Traffic Commissioner. Ideal for peace of mind, internal checks, or Earned Recognition evidence." },
-    { icon: <FileSpreadsheet className="h-6 w-6" aria-hidden />, title: "Tachograph & Working Time Analysis", desc: "Infringement detection and corrective actions.", backInfo: "We analyse driver card and vehicle unit data to detect infringements, fatigue risks, and poor scheduling practices before they escalate. You’ll receive clear, actionable reports that help you manage driver performance, plan corrective actions, and improve scheduling efficiency. Our systems also help you demonstrate control and due diligence, key factors in any DVSA visit or operator licence review." },
-    { icon: <TimerReset className="h-6 w-6" aria-hidden />, title: "Earned Recognition Readiness", desc: "Gap analysis and continuous monitoring to stay audit-ready.", backInfo: "If you’re working toward DVSA Earned Recognition status, we’ll assess your systems against the scheme’s standards. Our gap analysis identifies areas needing improvement, and our continuous monitoring helps ensure ongoing compliance. From KPI tracking to audit-ready documentation, we’ll position your operation to achieve recognition and showcase your commitment to excellence." },
-    { icon: <Truck className="h-6 w-6" aria-hidden />, title: "Maintenance & Defect Systems", desc: "Robust PMI, defect, and recall controls.", backInfo: "We build and review maintenance regimes that meet DVSA standards — covering PMIs, driver walkaround checks, defect reporting, and recall management. Our team ensures your paperwork (digital or paper-based) aligns with OCRS and Earned Recognition expectations. We can also assist in implementing digital defect systems, maintenance planners, and escalation procedures to reduce downtime and risk." },
-    { icon: <BookOpenCheck className="h-6 w-6" aria-hidden />, title: "Training & Toolbox Talks", desc: "Practical sessions for drivers and transport managers.", backInfo: "We deliver practical training sessions for drivers, transport managers, and supervisors on key compliance areas — from daily defect checks and drivers’ hours to load security, bridge strikes, and operator licence awareness. Sessions can be tailored to your business and delivered onsite or online, helping you build a stronger safety culture and keep compliance front of mind." },
+    {
+      icon: <ShieldCheck className="h-6 w-6" aria-hidden />,
+      title: "Operator Licence Support",
+      desc: "Policies, systems, and evidence packs aligned to DVSA expectations.",
+      backPoints: [
+        "Bespoke policy & SOP packs",
+        "Digital maintenance & driver records",
+        "Pre-audit checks and PI prep",
+      ],
+      tags: ["DVSA-ready", "SOPs", "Policy Pack"],
+      href: "#operator-licence"
+    },
+    {
+      icon: <ClipboardCheck className="h-6 w-6" aria-hidden />,
+      title: "Independent Compliance Audits",
+      desc: "End-to-end reviews of maintenance, hours, and records.",
+      backPoints: [
+        "Gap analysis with risk scoring",
+        "Prioritised action plan",
+        "Evidence for ER / TC / DVSA",
+      ],
+      tags: ["Audit", "Risk Score", "Action Plan"],
+      href: "#audit"
+    },
+    {
+      icon: <FileSpreadsheet className="h-6 w-6" aria-hidden />,
+      title: "Tachograph & Working Time Analysis",
+      desc: "Detect infringements and coach improvements.",
+      backPoints: [
+        "Driver card & VU analysis",
+        "Corrective actions & coaching",
+        "Scheduling & fatigue insights",
+      ],
+      tags: ["Tacho", "WTD", "Coaching"]
+    },
+    {
+      icon: <TimerReset className="h-6 w-6" aria-hidden />,
+      title: "Earned Recognition Readiness",
+      desc: "Get audit-ready and maintain KPIs.",
+      backPoints: [
+        "Readiness assessment",
+        "KPI tracking & alerts",
+        "Audit-ready documentation",
+      ],
+      tags: ["ER", "KPIs", "Monitoring"]
+    },
+    {
+      icon: <Truck className="h-6 w-6" aria-hidden />,
+      title: "Maintenance & Defect Systems",
+      desc: "Robust PMI, defect and recall controls.",
+      backPoints: [
+        "PMI planner & defect flow",
+        "Recall & escalation controls",
+        "Digital or paper processes",
+      ],
+      tags: ["PMI", "Defects", "Recall"]
+    },
+    {
+      icon: <BookOpenCheck className="h-6 w-6" aria-hidden />,
+      title: "Training & Toolbox Talks",
+      desc: "Practical sessions for drivers & managers.",
+      backPoints: [
+        "Drivers’ hours & walkaround",
+        "Load security & bridge strikes",
+        "OL awareness for managers",
+      ],
+      tags: ["Training", "Toolbox", "Safety Culture"]
+    },
   ];
+
   const steps = [
     { k: "1", title: "Discovery", desc: "Short scoping call to understand your operation, risks, and goals." },
     { k: "2", title: "Audit & Action Plan", desc: "On-site/remote audit with a prioritized roadmap." },
