@@ -11,6 +11,7 @@ import Services from "./pages/Services.jsx";
 import Privacy from "./pages/Privacy.jsx";
 import Terms from "./pages/Terms.jsx";
 import Cookies from "./pages/Cookies.jsx";
+import Admin from "./pages/Admin.jsx"
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/cookies" element={<Cookies />} />
+        <Route path="/admin" element={<Admin />} />
       </Routes>
       <Footer />
     </div>
