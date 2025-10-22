@@ -200,15 +200,36 @@ function AdminMessages({ onLoggedOut }) {
     function clearSelection() { setSelected([]); }
 
     async function setRead(id, read) {
-        await apiFetch(`/admin/messages/${id}`, { method: "PATCH", headers: { "X-CSRF-Token": csrf }, body: JSON.stringify({ read }) });
+        await apiFetch(`/admin/messages/${id}`, {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json; charset=UTF-8", // ← add this
+                "X-CSRF-Token": csrf,
+            },
+            body: JSON.stringify({ read }),
+        });
         m.reload();
     }
+
     async function del(id) {
-        await apiFetch(`/admin/messages/${id}`, { method: "DELETE", headers: { "X-CSRF-Token": csrf } });
+        await apiFetch(`/admin/messages/${id}`, {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json; charset=UTF-8", // safe even if no body
+                "X-CSRF-Token": csrf,
+            },
+        });
         m.reload();
     }
+
     async function restore(id) {
-        await apiFetch(`/admin/messages/${id}/restore`, { method: "POST", headers: { "X-CSRF-Token": csrf } });
+        await apiFetch(`/admin/messages/${id}/restore`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json; charset=UTF-8",
+                "X-CSRF-Token": csrf,
+            },
+        });
         m.reload();
     }
     async function bulk(setToRead) {
