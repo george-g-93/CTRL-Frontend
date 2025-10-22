@@ -65,6 +65,87 @@ function useCsrf() {
     return csrf;
 }
 
+// -----------MFA----------------
+// near the top:
+function isMfaRequiredError(e) { return e?.status === 401 && /MFA required/i.test(e.message || ""); }
+
+function MfaBox({ csrf, initiallyEnrolled = true, onDone }) {
+    const [step, setStep] = useState(initiallyEnrolled ? "verify" : "enrol");
+    const [loading, setLoading] = useState(false);
+    const [err, setErr] = useState("");
+    const [token, setToken] = useState("");
+    const [qr, setQr] = useState("");
+    const [secret, setSecret] = useState("");
+
+    async function startEnrol() {
+        setErr(""); setLoading(true);
+        try {
+            const d = await apiFetch("/admin/2fa/setup", {
+                method: "POST",
+                headers: { "X-CSRF-Token": csrf, "Content-Type": "application/json; charset=UTF-8" }
+            });
+            setQr(d.qr); setSecret(d.secret);
+            setStep("verify"); // after scanning, go straight to verify
+        } catch (e) {
+            setErr(e.message || "Failed to start 2FA");
+        } finally { setLoading(false); }
+    }
+
+    async function verify() {
+        setErr(""); setLoading(true);
+        try {
+            await apiFetch("/admin/2fa/verify", {
+                method: "POST",
+                headers: { "X-CSRF-Token": csrf, "Content-Type": "application/json; charset=UTF-8" },
+                body: JSON.stringify({ token })
+            });
+            onDone?.();
+        } catch (e) {
+            setErr(e.message || "Invalid code");
+        } finally { setLoading(false); }
+    }
+
+    return (
+        <div className="max-w-md mx-auto rounded-2xl border p-6 mt-10 border-slate-200 bg-white dark:border-white/10 dark:bg-white/[0.04]">
+            <h1 className="text-2xl font-semibold">Two-factor authentication</h1>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                Use an authenticator app (Microsoft/Google Authenticator, 1Password, etc).
+            </p>
+
+            {step === "enrol" && (
+                <div className="mt-4 space-y-3">
+                    <button onClick={startEnrol} className={CLS.btnPrimary} disabled={loading}>
+                        {loading ? "Generating key…" : "Set up 2FA"}
+                    </button>
+                    {err && <div className="text-sm text-rose-600">{err}</div>}
+                    <p className="text-xs text-slate-500">You’ll get a QR code and secret to add to your app.</p>
+                </div>
+            )}
+
+            {step === "verify" && (
+                <div className="mt-4 space-y-3">
+                    {qr && (
+                        <div className="rounded-xl border p-3 bg-white dark:bg-white/5 dark:border-white/10">
+                            <img alt="Authenticator QR" src={qr} className="mx-auto" />
+                            <div className="mt-2 text-xs text-slate-500 break-all">Secret: {secret}</div>
+                        </div>
+                    )}
+                    <label className="flex flex-col gap-2">
+                        <span className="text-xs text-slate-600 dark:text-slate-300">6-digit code</span>
+                        <input className={CLS.field} inputMode="numeric" maxLength={6} placeholder="123456"
+                            value={token} onChange={(e) => setToken(e.target.value.replace(/\D/g, ""))} />
+                    </label>
+                    <button onClick={verify} className={CLS.btnPrimary + " w-full"} disabled={loading || token.length < 6}>
+                        {loading ? "Verifying…" : "Verify & continue"}
+                    </button>
+                    {err && <div className="text-sm text-rose-600">{err}</div>}
+                </div>
+            )}
+        </div>
+    );
+}
+
+
 // ---------- Login ----------
 function AdminLogin({ onLoggedIn }) {
     const csrf = useCsrf();
@@ -79,7 +160,7 @@ function AdminLogin({ onLoggedIn }) {
         setErr("");
         setLoading(true);
         try {
-            await apiFetch("/admin/login", {
+            const resp = await apiFetch("/admin/login", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json; charset=UTF-8",   // <-- add this explicitly
@@ -87,7 +168,7 @@ function AdminLogin({ onLoggedIn }) {
                 },
                 body: JSON.stringify({ email, password }),
             });
-            onLoggedIn();
+            onLoggedIn(resp);
         } catch (e) {
             setErr(e.message || "Login failed");
         } finally {
@@ -186,7 +267,7 @@ function ActionsBar({ selected, clearSelection, onBulkRead, onBulkUnread, onBulk
     );
 }
 
-function AdminMessages({ onLoggedOut }) {
+function AdminMessages({ onLoggedOut, onMfaRequired }) {
     const csrf = useCsrf();
     const m = useMessages({ initialLimit: 20 });
     const [selected, setSelected] = useState([]);
@@ -200,37 +281,43 @@ function AdminMessages({ onLoggedOut }) {
     function clearSelection() { setSelected([]); }
 
     async function setRead(id, read) {
-        await apiFetch(`/admin/messages/${id}`, {
-            method: "PATCH",
-            headers: {
-                "Content-Type": "application/json; charset=UTF-8", // ← add this
-                "X-CSRF-Token": csrf,
-            },
-            body: JSON.stringify({ read }),
-        });
-        m.reload();
+        try {
+            await apiFetch(`/admin/messages/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+                body: JSON.stringify({ read }),
+            });
+            m.reload();
+        } catch (e) {
+            if (isMfaRequiredError(e)) { onMfaRequired?.(); return; }
+            throw e;
+        }
     }
 
     async function del(id) {
-        await apiFetch(`/admin/messages/${id}`, {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json; charset=UTF-8", // safe even if no body
-                "X-CSRF-Token": csrf,
-            },
-        });
-        m.reload();
+        try {
+            await apiFetch(`/admin/messages/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+            });
+            m.reload();
+        } catch (e) {
+            if (isMfaRequiredError(e)) { onMfaRequired?.(); return; }
+            throw e;
+        }
     }
 
     async function restore(id) {
-        await apiFetch(`/admin/messages/${id}/restore`, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json; charset=UTF-8",
-                "X-CSRF-Token": csrf,
-            },
-        });
-        m.reload();
+        try {
+            await apiFetch(`/admin/messages/${id}/restore`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+            });
+            m.reload();
+        } catch (e) {
+            if (isMfaRequiredError(e)) { onMfaRequired?.(); return; }
+            throw e;
+        }
     }
     async function bulk(setToRead) {
         for (const id of selected) {
@@ -393,14 +480,27 @@ function AdminMessages({ onLoggedOut }) {
 export default function Admin() {
     const [authed, setAuthed] = useState(false);
     const [checking, setChecking] = useState(true);
+    const [mfaNeeded, setMfaNeeded] = useState(false);
+    const [enrolled, setEnrolled] = useState(true); // server tells us
+    const csrf = useCsrf();
 
     useEffect(() => {
-        // quick session check - if 401, show login
         apiFetch("/admin/messages?page=1&limit=1")
-            .then(() => setAuthed(true))
-            .catch(() => setAuthed(false))
+            .then(() => { setAuthed(true); setMfaNeeded(false); })
+            .catch(() => { setAuthed(false); })
             .finally(() => setChecking(false));
     }, []);
+
+    function handleLoggedIn(result) {
+        // if your AdminLogin calls onLoggedIn(responseBody):
+        if (result?.mfaRequired) {
+            setMfaNeeded(true);
+            setEnrolled(!!result.enrolled);
+            setAuthed(false);
+        } else {
+            setAuthed(true);
+        }
+    }
 
     if (!API_ROOT) {
         return (
@@ -419,5 +519,13 @@ export default function Admin() {
         );
     }
 
-    return authed ? <AdminMessages onLoggedOut={() => setAuthed(false)} /> : <AdminLogin onLoggedIn={() => setAuthed(true)} />;
+    if (mfaNeeded) {
+        return <MfaBox csrf={csrf} initiallyEnrolled={enrolled} onDone={() => { setMfaNeeded(false); setAuthed(true); }} />;
+    }
+
+    return authed
+        ? <AdminMessages onLoggedOut={() => setAuthed(false)}
+            onMfaRequired={() => setMfaNeeded(true)} />
+        : <AdminLogin onLoggedIn={handleLoggedIn} />;
+
 }
