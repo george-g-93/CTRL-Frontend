@@ -490,12 +490,167 @@ function AdminMessages({ onLoggedOut, onMfaRequired }) {
     );
 }
 
+function AdminUsers({ onRequireMfa }) {
+  const csrf = useCsrf();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [err, setErr] = useState("");
+
+  // New user form state
+  const [email, setEmail] = useState("");
+  const [name, setName] = useState("");
+  const [password, setPassword] = useState("");
+
+  async function load() {
+    setLoading(true); setErr("");
+    try {
+      const d = await apiFetch("/admin/users");
+      setItems(d.items || []);
+    } catch (e) {
+      setErr(e.message || "Failed to load users");
+    } finally { setLoading(false); }
+  }
+
+  useEffect(() => { load(); }, []);
+
+  async function createUser(e) {
+    e.preventDefault();
+    setErr("");
+    try {
+      await apiFetch("/admin/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+        body: JSON.stringify({ email, name, password }),
+      });
+      setEmail(""); setName(""); setPassword("");
+      load();
+    } catch (e) {
+      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+      setErr(e.message || "Failed to create user");
+    }
+  }
+
+  async function disableUser(id, disabled) {
+    try {
+      await apiFetch(`/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+        body: JSON.stringify({ disabled }),
+      });
+      load();
+    } catch (e) {
+      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+      setErr(e.message || "Failed to update");
+    }
+  }
+
+  async function resetPassword(id) {
+    const pw = prompt("Enter a new temporary password (min 8 chars):");
+    if (!pw) return;
+    try {
+      await apiFetch(`/admin/users/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+        body: JSON.stringify({ password: pw }),
+      });
+      alert("Password updated.");
+    } catch (e) {
+      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+      alert(e.message || "Failed to update password");
+    }
+  }
+
+  async function resetMfa(id) {
+    if (!confirm("Reset MFA for this user? They will need to re-enrol on next login.")) return;
+    try {
+      await apiFetch(`/admin/users/${id}/reset-mfa`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+      });
+      alert("MFA reset.");
+    } catch (e) {
+      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+      alert(e.message || "Failed to reset MFA");
+    }
+  }
+
+  async function removeUser(id) {
+    if (!confirm("Delete this user?")) return;
+    try {
+      await apiFetch(`/admin/users/${id}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+      });
+      load();
+    } catch (e) {
+      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+      alert(e.message || "Failed to delete user");
+    }
+  }
+
+  return (
+    <div>
+      <h2 className="text-2xl font-semibold mb-3">Admin users</h2>
+
+      <form onSubmit={createUser} className="rounded-xl border p-4 mb-4 dark:border-white/10">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <label className="flex flex-col gap-1">
+            <span className="text-xs">Email</span>
+            <input className={CLS.field} type="email" required value={email} onChange={e=>setEmail(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs">Name</span>
+            <input className={CLS.field} value={name} onChange={e=>setName(e.target.value)} />
+          </label>
+          <label className="flex flex-col gap-1">
+            <span className="text-xs">Password</span>
+            <input className={CLS.field} type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} />
+          </label>
+        </div>
+        <div className="mt-3">
+          <button className={CLS.btnPrimary}>Add user</button>
+        </div>
+        {err && <div className="text-sm text-rose-600 mt-2">{err}</div>}
+      </form>
+
+      {loading ? (
+        <div className="text-sm text-slate-600">Loading…</div>
+      ) : (
+        <div className="space-y-2">
+          {items.map(u => (
+            <div key={u._id} className="rounded-xl border p-3 flex items-center justify-between dark:border-white/10">
+              <div>
+                <div className="font-medium">{u.email}{u.name ? ` — ${u.name}` : ""}</div>
+                <div className="text-xs text-slate-500">
+                  Created {u.createdAt ? new Date(u.createdAt).toLocaleString() : "—"}
+                  {u.lastLoginAt ? ` · Last login ${new Date(u.lastLoginAt).toLocaleString()}` : ""}
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <button className={CLS.btnOutline} onClick={()=>disableUser(u._id, !u.disabled)}>
+                  {u.disabled ? "Enable" : "Disable"}
+                </button>
+                <button className={CLS.btnOutline} onClick={()=>resetPassword(u._id)}>Reset password</button>
+                <button className={CLS.btnOutline} onClick={()=>resetMfa(u._id)}>Reset MFA</button>
+                <button className={CLS.btnOutline} onClick={()=>removeUser(u._id)}>Delete</button>
+              </div>
+            </div>
+          ))}
+          {items.length === 0 && <div className="text-sm text-slate-500">No admin users yet.</div>}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // ---------- Root component exported ----------
 export default function Admin() {
     const [authed, setAuthed] = useState(false);
     const [checking, setChecking] = useState(true);
     const [mfaNeeded, setMfaNeeded] = useState(false);
-    const [enrolled, setEnrolled] = useState(true); // server tells us
+    const [enrolled, setEnrolled] = useState(true);
+    const [tab, setTab] = useState("messages"); // <— NEW
     const csrf = useCsrf();
 
     useEffect(() => {
@@ -506,7 +661,6 @@ export default function Admin() {
     }, []);
 
     function handleLoggedIn(result) {
-        // if your AdminLogin calls onLoggedIn(responseBody):
         if (result?.mfaRequired) {
             setMfaNeeded(true);
             setEnrolled(!!result.enrolled);
@@ -517,29 +671,47 @@ export default function Admin() {
     }
 
     if (!API_ROOT) {
-        return (
-            <div className="max-w-xl mx-auto p-6">
-                <h1 className="text-xl font-semibold">Admin</h1>
-                <p className="mt-2 text-rose-600">VITE_API_BASE is not configured.</p>
-            </div>
-        );
+        return <div className="max-w-xl mx-auto p-6">
+            <h1 className="text-xl font-semibold">Admin</h1>
+            <p className="mt-2 text-rose-600">VITE_API_BASE is not configured.</p>
+        </div>;
     }
 
     if (checking) {
-        return (
-            <div className="max-w-xl mx-auto p-6">
-                <p className="text-sm text-slate-600">Checking session…</p>
-            </div>
-        );
+        return <div className="max-w-xl mx-auto p-6">
+            <p className="text-sm text-slate-600">Checking session…</p>
+        </div>;
     }
 
     if (mfaNeeded) {
         return <MfaBox initiallyEnrolled={enrolled} onDone={() => { setMfaNeeded(false); setAuthed(true); }} />;
     }
 
-    return authed
-        ? <AdminMessages onLoggedOut={() => setAuthed(false)}
-            onMfaRequired={() => setMfaNeeded(true)} />
-        : <AdminLogin onLoggedIn={handleLoggedIn} />;
+    if (!authed) return <AdminLogin onLoggedIn={handleLoggedIn} />;
 
+    // --- When authed, render top tabs + panel ---
+    return (
+        <div className="mx-auto max-w-6xl px-4 py-8">
+            <div className="mb-6 flex items-center gap-2">
+                <button
+                    className={(tab === "messages" ? CLS.btnPrimary : CLS.btnOutline)}
+                    onClick={() => setTab("messages")}
+                >
+                    Messages
+                </button>
+                <button
+                    className={(tab === "users" ? CLS.btnPrimary : CLS.btnOutline)}
+                    onClick={() => setTab("users")}
+                >
+                    Users
+                </button>
+            </div>
+
+            {tab === "messages" ? (
+                <AdminMessages onLoggedOut={() => setAuthed(false)} onMfaRequired={() => setMfaNeeded(true)} />
+            ) : (
+                <AdminUsers onRequireMfa={() => setMfaNeeded(true)} />
+            )}
+        </div>
+    );
 }
