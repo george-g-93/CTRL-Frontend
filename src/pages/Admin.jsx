@@ -70,7 +70,7 @@ function useCsrf() {
 function isMfaRequiredError(e) { return e?.status === 401 && /MFA required/i.test(e.message || ""); }
 
 function MfaBox({ csrf, initiallyEnrolled = true, onDone }) {
-    const [csrf, setCsrf] = useState("");
+    //const [csrf, setCsrf] = useState("");
     const [step, setStep] = useState(initiallyEnrolled ? "verify" : "enrol");
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState("");
