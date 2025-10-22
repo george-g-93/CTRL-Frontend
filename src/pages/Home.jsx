@@ -468,7 +468,7 @@ export default function Home() {
                 We help transport operators build practical systems that pass scrutiny—without slowing the operation.
               </p>
               {/*<div className="mt-8 flex flex-col sm:flex-row gap-3">*/}
-                <div className="mt-6 grid grid-cols-1 sm:flex sm:flex-row gap-2 sm:gap-3">
+              <div className="mt-6 grid grid-cols-1 sm:flex sm:flex-row gap-2 sm:gap-3">
                 <CTAButton primary>Book an intro call</CTAButton>
                 <CTAButton>See audit checklist</CTAButton>
               </div>
@@ -803,8 +803,8 @@ function HomeContactForm() {
               (status.state === "success"
                 ? "text-emerald-700 dark:text-emerald-300"
                 : status.state === "error"
-                ? "text-rose-600 dark:text-rose-400"
-                : "text-slate-500")
+                  ? "text-rose-600 dark:text-rose-400"
+                  : "text-slate-500")
             }
           >
             {status.msg}
