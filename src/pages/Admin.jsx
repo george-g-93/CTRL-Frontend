@@ -69,8 +69,8 @@ function useCsrf() {
 // near the top:
 function isMfaRequiredError(e) { return e?.status === 401 && /MFA required/i.test(e.message || ""); }
 
-function MfaBox({ csrf, initiallyEnrolled = true, onDone }) {
-    //const [csrf, setCsrf] = useState("");
+function MfaBox({ initiallyEnrolled = true, onDone }) {
+    const [csrf, setCsrf] = useState("");
     const [step, setStep] = useState(initiallyEnrolled ? "verify" : "enrol");
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState("");
@@ -534,7 +534,7 @@ export default function Admin() {
     }
 
     if (mfaNeeded) {
-        return <MfaBox csrf={csrf} initiallyEnrolled={enrolled} onDone={() => { setMfaNeeded(false); setAuthed(true); }} />;
+        return <MfaBox initiallyEnrolled={enrolled} onDone={() => { setMfaNeeded(false); setAuthed(true); }} />;
     }
 
     return authed
