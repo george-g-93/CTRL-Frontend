@@ -312,10 +312,24 @@ function AdminMessages({ onLoggedOut }) {
 
             <div className="space-y-3">
                 {m.items.map((it) => (
-                    <div key={it._id} className={`rounded-xl border p-4 ${it.read ? "opacity-80" : ""} dark:border-white/10`}>
+                    <div
+                        key={it._id}
+                        className={[
+                            "relative rounded-xl p-4 border transition-colors shadow-sm",
+                            it.read
+                                ? "bg-white border-slate-200 hover:shadow-md dark:bg-white/5 dark:border-white/10"
+                                : "bg-emerald-50/80 border-emerald-200 hover:shadow-md dark:bg-emerald-400/10 dark:border-emerald-400/30"
+                        ].join(" ")}
+                    >
+                        {/* unread left accent bar */}
+                        {!it.read && <span className="absolute left-0 top-0 bottom-0 w-1 rounded-l-xl bg-emerald-400/90" />}
+
                         <div className="flex items-start justify-between gap-3">
                             <div>
-                                <div className="font-medium text-slate-900 dark:text-slate-100">
+                                <div className={it.read
+                                    ? "font-medium text-slate-900 dark:text-slate-100"
+                                    : "font-semibold text-emerald-950 dark:text-emerald-100"}>
+
                                     {it.name} <span className="text-slate-500">·</span> <a href={`mailto:${it.email}`} className="underline-offset-2 hover:underline">{it.email}</a>
                                 </div>
                                 <div className="text-xs text-slate-500 mt-0.5">{new Date(it.createdAt).toLocaleString()}</div>
@@ -337,9 +351,21 @@ function AdminMessages({ onLoggedOut }) {
                                     </>
                                 )}
                                 <input type="checkbox" className="h-4 w-4" checked={selected.includes(it._id)} onChange={() => toggle(it._id)} />
+                                {!it.read && (
+                                    <span className="hidden sm:inline-flex items-center rounded-full px-2 py-0.5 text-[11px]
+                   bg-emerald-500/15 text-emerald-700 border border-emerald-500/20
+                   dark:bg-emerald-400/15 dark:text-emerald-100 dark:border-emerald-400/25">
+                                        Unread
+                                    </span>
+                                )}
+
                             </div>
                         </div>
-                        <p className="mt-2 text-sm whitespace-pre-wrap">{it.message}</p>
+                        <p className={`mt-2 text-sm whitespace-pre-wrap ${it.read ? "text-slate-700 dark:text-slate-300" : "text-slate-800 dark:text-slate-100"
+                            }`}>
+                            {it.message}
+                        </p>
+
                     </div>
                 ))}
                 {(!m.loading && m.items.length === 0) && (
