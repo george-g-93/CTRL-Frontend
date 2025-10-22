@@ -70,6 +70,7 @@ function useCsrf() {
 function isMfaRequiredError(e) { return e?.status === 401 && /MFA required/i.test(e.message || ""); }
 
 function MfaBox({ csrf, initiallyEnrolled = true, onDone }) {
+    const [csrf, setCsrf] = useState("");
     const [step, setStep] = useState(initiallyEnrolled ? "verify" : "enrol");
     const [loading, setLoading] = useState(false);
     const [err, setErr] = useState("");
@@ -77,15 +78,25 @@ function MfaBox({ csrf, initiallyEnrolled = true, onDone }) {
     const [qr, setQr] = useState("");
     const [secret, setSecret] = useState("");
 
+    // 🔑 Get a *fresh* CSRF tied to the just-created login session
+    useEffect(() => {
+        apiFetch("/admin/csrf", { headers: {} })
+            .then(d => setCsrf(d.csrf))
+            .catch(() => setCsrf(""));
+    }, []);
+
     async function startEnrol() {
         setErr(""); setLoading(true);
         try {
             const d = await apiFetch("/admin/2fa/setup", {
                 method: "POST",
-                headers: { "X-CSRF-Token": csrf, "Content-Type": "application/json; charset=UTF-8" }
+                headers: {
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "X-CSRF-Token": csrf,                 // <-- use fresh csrf here
+                },
             });
             setQr(d.qr); setSecret(d.secret);
-            setStep("verify"); // after scanning, go straight to verify
+            setStep("verify");
         } catch (e) {
             setErr(e.message || "Failed to start 2FA");
         } finally { setLoading(false); }
@@ -96,8 +107,11 @@ function MfaBox({ csrf, initiallyEnrolled = true, onDone }) {
         try {
             await apiFetch("/admin/2fa/verify", {
                 method: "POST",
-                headers: { "X-CSRF-Token": csrf, "Content-Type": "application/json; charset=UTF-8" },
-                body: JSON.stringify({ token })
+                headers: {
+                    "Content-Type": "application/json; charset=UTF-8",
+                    "X-CSRF-Token": csrf,                 // <-- and here
+                },
+                body: JSON.stringify({ token }),
             });
             onDone?.();
         } catch (e) {
