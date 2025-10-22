@@ -1,13 +1,37 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CTRL Compliance</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CTRL Compliance</title>
+</head>
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-BB1CVP31VY"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  gtag('js', new Date());
+
+  // Optional but recommended:
+  // - disable auto page_view (we'll send manually on route changes)
+  // - anonymize IP for privacy
+  gtag('config', 'G-BB1CVP31VY', {
+    send_page_view: false,
+    anonymize_ip: true
+  });
+
+  // (Optional) Consent Mode defaults — flip these to "granted" when the user accepts cookies
+  gtag('consent', 'default', {
+    ad_storage: 'denied',
+    analytics_storage: 'denied',
+    wait_for_update: 500
+  });
+</script>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.jsx"></script>
+</body>
+
 </html>

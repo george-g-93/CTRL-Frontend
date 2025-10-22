@@ -1,5 +1,7 @@
 // FILE: src/App.jsx
 import { Routes, Route } from "react-router-dom";
+import { useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Header from "./components/Header.jsx";
 import Footer from "./components/Footer.jsx";
 import Home from "./pages/Home.jsx";
@@ -14,6 +16,17 @@ import Cookies from "./pages/Cookies.jsx";
 import Admin from "./pages/Admin.jsx"
 
 export default function App() {
+
+  const location = useLocation();
+
+  useEffect(() => {
+    if (window.gtag) {
+      window.gtag("config", "G-BB1CVP31VY", {
+        page_path: location.pathname + location.search
+      });
+    }
+  }, [location.pathname, location.search]);
+
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <Header />
