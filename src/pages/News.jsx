@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 
-const API = import.meta.env.VITE_API_BASE;
+const API = import.meta.env.VITE_API_BASE?.replace(/\/+$/, "") || "";
 
 export default function News() {
   const [posts, setPosts] = useState([]);
@@ -17,7 +17,8 @@ export default function News() {
         const r = await fetch(`${API}/news`, { cache: "no-store" });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data = await r.json();
-        if (alive) setPosts(data);
+        // Expecting [{ slug, title, blurb, date }]
+        if (alive) setPosts(Array.isArray(data) ? data : []);
       } catch (e) {
         if (alive) setErr("Couldn't load news right now.");
       } finally {
@@ -41,22 +42,20 @@ export default function News() {
         <div className="mt-8 grid gap-6 sm:grid-cols-2">
           {posts.map((p, i) => (
             <motion.article
-              key={p.id}
+              key={p.slug}
               initial={{ opacity: 0, y: 8 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.3 }}
               transition={{ delay: i * 0.05 }}
-              className="rounded-2xl border p-6
-                border-slate-200 bg-white shadow-sm
-                dark:border-white/10 dark:bg-white/5"
+              className="rounded-2xl border p-6 border-slate-200 bg-white shadow-sm dark:border-white/10 dark:bg-white/5"
             >
               <div className="text-xs text-slate-500 dark:text-slate-400">
-                {new Date(p.date).toLocaleDateString()}
+                {p.date ? new Date(p.date).toLocaleDateString() : ""}
               </div>
 
               <h2 className="mt-1 text-xl font-semibold">
                 <Link
-                  to={`/news/${p.id}`}
+                  to={`/news/${p.slug}`}
                   className="text-slate-900 hover:text-emerald-700 dark:text-slate-100 dark:hover:text-emerald-300"
                 >
                   {p.title}
@@ -67,11 +66,14 @@ export default function News() {
                 {p.blurb}
               </p>
 
-              <Link to={`/news/${p.id}`} className="mt-4 inline-block btn-outline text-xs">
+              <Link to={`/news/${p.slug}`} className="mt-4 inline-block text-xs border border-slate-300 rounded-xl px-3 py-1.5 hover:bg-slate-50 dark:border-white/15 dark:hover:bg-white/10">
                 Read more
               </Link>
             </motion.article>
           ))}
+          {posts.length === 0 && (
+            <div className="text-sm text-slate-500">No posts yet.</div>
+          )}
         </div>
       )}
     </section>
