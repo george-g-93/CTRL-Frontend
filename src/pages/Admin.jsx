@@ -40,6 +40,16 @@ const API_ROOT = (
     ""
 ).replace(/\/+$/, "");
 
+//slugify
+function slugify(s) {
+    return (s || "")
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+}
+
+
 async function apiFetch(path, opts = {}) {
     const res = await fetch(`${API_ROOT}${path}`, {
         credentials: "include",
@@ -491,157 +501,338 @@ function AdminMessages({ onLoggedOut, onMfaRequired }) {
 }
 
 function AdminUsers({ onRequireMfa }) {
-  const csrf = useCsrf();
-  const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [err, setErr] = useState("");
+    const csrf = useCsrf();
+    const [items, setItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [err, setErr] = useState("");
 
-  // New user form state
-  const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
-  const [password, setPassword] = useState("");
+    // New user form state
+    const [email, setEmail] = useState("");
+    const [name, setName] = useState("");
+    const [password, setPassword] = useState("");
 
-  async function load() {
-    setLoading(true); setErr("");
-    try {
-      const d = await apiFetch("/admin/users");
-      setItems(d.items || []);
-    } catch (e) {
-      setErr(e.message || "Failed to load users");
-    } finally { setLoading(false); }
-  }
-
-  useEffect(() => { load(); }, []);
-
-  async function createUser(e) {
-    e.preventDefault();
-    setErr("");
-    try {
-      await apiFetch("/admin/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
-        body: JSON.stringify({ email, name, password }),
-      });
-      setEmail(""); setName(""); setPassword("");
-      load();
-    } catch (e) {
-      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
-      setErr(e.message || "Failed to create user");
+    async function load() {
+        setLoading(true); setErr("");
+        try {
+            const d = await apiFetch("/admin/users");
+            setItems(d.items || []);
+        } catch (e) {
+            setErr(e.message || "Failed to load users");
+        } finally { setLoading(false); }
     }
-  }
 
-  async function disableUser(id, disabled) {
-    try {
-      await apiFetch(`/admin/users/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
-        body: JSON.stringify({ disabled }),
-      });
-      load();
-    } catch (e) {
-      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
-      setErr(e.message || "Failed to update");
+    useEffect(() => { load(); }, []);
+
+    async function createUser(e) {
+        e.preventDefault();
+        setErr("");
+        try {
+            await apiFetch("/admin/users", {
+                method: "POST",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+                body: JSON.stringify({ email, name, password }),
+            });
+            setEmail(""); setName(""); setPassword("");
+            load();
+        } catch (e) {
+            if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+            setErr(e.message || "Failed to create user");
+        }
     }
-  }
 
-  async function resetPassword(id) {
-    const pw = prompt("Enter a new temporary password (min 8 chars):");
-    if (!pw) return;
-    try {
-      await apiFetch(`/admin/users/${id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
-        body: JSON.stringify({ password: pw }),
-      });
-      alert("Password updated.");
-    } catch (e) {
-      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
-      alert(e.message || "Failed to update password");
+    async function disableUser(id, disabled) {
+        try {
+            await apiFetch(`/admin/users/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+                body: JSON.stringify({ disabled }),
+            });
+            load();
+        } catch (e) {
+            if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+            setErr(e.message || "Failed to update");
+        }
     }
-  }
 
-  async function resetMfa(id) {
-    if (!confirm("Reset MFA for this user? They will need to re-enrol on next login.")) return;
-    try {
-      await apiFetch(`/admin/users/${id}/reset-mfa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
-      });
-      alert("MFA reset.");
-    } catch (e) {
-      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
-      alert(e.message || "Failed to reset MFA");
+    async function resetPassword(id) {
+        const pw = prompt("Enter a new temporary password (min 8 chars):");
+        if (!pw) return;
+        try {
+            await apiFetch(`/admin/users/${id}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+                body: JSON.stringify({ password: pw }),
+            });
+            alert("Password updated.");
+        } catch (e) {
+            if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+            alert(e.message || "Failed to update password");
+        }
     }
-  }
 
-  async function removeUser(id) {
-    if (!confirm("Delete this user?")) return;
-    try {
-      await apiFetch(`/admin/users/${id}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
-      });
-      load();
-    } catch (e) {
-      if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
-      alert(e.message || "Failed to delete user");
+    async function resetMfa(id) {
+        if (!confirm("Reset MFA for this user? They will need to re-enrol on next login.")) return;
+        try {
+            await apiFetch(`/admin/users/${id}/reset-mfa`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+            });
+            alert("MFA reset.");
+        } catch (e) {
+            if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+            alert(e.message || "Failed to reset MFA");
+        }
     }
-  }
 
-  return (
-    <div>
-      <h2 className="text-2xl font-semibold mb-3">Admin users</h2>
+    async function removeUser(id) {
+        if (!confirm("Delete this user?")) return;
+        try {
+            await apiFetch(`/admin/users/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+            });
+            load();
+        } catch (e) {
+            if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+            alert(e.message || "Failed to delete user");
+        }
+    }
 
-      <form onSubmit={createUser} className="rounded-xl border p-4 mb-4 dark:border-white/10">
-        <div className="grid gap-3 sm:grid-cols-3">
-          <label className="flex flex-col gap-1">
-            <span className="text-xs">Email</span>
-            <input className={CLS.field} type="email" required value={email} onChange={e=>setEmail(e.target.value)} />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs">Name</span>
-            <input className={CLS.field} value={name} onChange={e=>setName(e.target.value)} />
-          </label>
-          <label className="flex flex-col gap-1">
-            <span className="text-xs">Password</span>
-            <input className={CLS.field} type="password" required minLength={8} value={password} onChange={e=>setPassword(e.target.value)} />
-          </label>
-        </div>
-        <div className="mt-3">
-          <button className={CLS.btnPrimary}>Add user</button>
-        </div>
-        {err && <div className="text-sm text-rose-600 mt-2">{err}</div>}
-      </form>
+    return (
+        <div>
+            <h2 className="text-2xl font-semibold mb-3">Admin users</h2>
 
-      {loading ? (
-        <div className="text-sm text-slate-600">Loading…</div>
-      ) : (
-        <div className="space-y-2">
-          {items.map(u => (
-            <div key={u._id} className="rounded-xl border p-3 flex items-center justify-between dark:border-white/10">
-              <div>
-                <div className="font-medium">{u.email}{u.name ? ` — ${u.name}` : ""}</div>
-                <div className="text-xs text-slate-500">
-                  Created {u.createdAt ? new Date(u.createdAt).toLocaleString() : "—"}
-                  {u.lastLoginAt ? ` · Last login ${new Date(u.lastLoginAt).toLocaleString()}` : ""}
+            <form onSubmit={createUser} className="rounded-xl border p-4 mb-4 dark:border-white/10">
+                <div className="grid gap-3 sm:grid-cols-3">
+                    <label className="flex flex-col gap-1">
+                        <span className="text-xs">Email</span>
+                        <input className={CLS.field} type="email" required value={email} onChange={e => setEmail(e.target.value)} />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                        <span className="text-xs">Name</span>
+                        <input className={CLS.field} value={name} onChange={e => setName(e.target.value)} />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                        <span className="text-xs">Password</span>
+                        <input className={CLS.field} type="password" required minLength={8} value={password} onChange={e => setPassword(e.target.value)} />
+                    </label>
                 </div>
-              </div>
-              <div className="flex gap-2">
-                <button className={CLS.btnOutline} onClick={()=>disableUser(u._id, !u.disabled)}>
-                  {u.disabled ? "Enable" : "Disable"}
-                </button>
-                <button className={CLS.btnOutline} onClick={()=>resetPassword(u._id)}>Reset password</button>
-                <button className={CLS.btnOutline} onClick={()=>resetMfa(u._id)}>Reset MFA</button>
-                <button className={CLS.btnOutline} onClick={()=>removeUser(u._id)}>Delete</button>
-              </div>
-            </div>
-          ))}
-          {items.length === 0 && <div className="text-sm text-slate-500">No admin users yet.</div>}
+                <div className="mt-3">
+                    <button className={CLS.btnPrimary}>Add user</button>
+                </div>
+                {err && <div className="text-sm text-rose-600 mt-2">{err}</div>}
+            </form>
+
+            {loading ? (
+                <div className="text-sm text-slate-600">Loading…</div>
+            ) : (
+                <div className="space-y-2">
+                    {items.map(u => (
+                        <div key={u._id} className="rounded-xl border p-3 flex items-center justify-between dark:border-white/10">
+                            <div>
+                                <div className="font-medium">{u.email}{u.name ? ` — ${u.name}` : ""}</div>
+                                <div className="text-xs text-slate-500">
+                                    Created {u.createdAt ? new Date(u.createdAt).toLocaleString() : "—"}
+                                    {u.lastLoginAt ? ` · Last login ${new Date(u.lastLoginAt).toLocaleString()}` : ""}
+                                </div>
+                            </div>
+                            <div className="flex gap-2">
+                                <button className={CLS.btnOutline} onClick={() => disableUser(u._id, !u.disabled)}>
+                                    {u.disabled ? "Enable" : "Disable"}
+                                </button>
+                                <button className={CLS.btnOutline} onClick={() => resetPassword(u._id)}>Reset password</button>
+                                <button className={CLS.btnOutline} onClick={() => resetMfa(u._id)}>Reset MFA</button>
+                                <button className={CLS.btnOutline} onClick={() => removeUser(u._id)}>Delete</button>
+                            </div>
+                        </div>
+                    ))}
+                    {items.length === 0 && <div className="text-sm text-slate-500">No admin users yet.</div>}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }
+
+function AdminNews({ onRequireMfa }) {
+    const csrf = useCsrf();
+    const [items, setItems] = useState([]);
+    const [total, setTotal] = useState(0);
+    const [page, setPage] = useState(1);
+    const [limit, setLimit] = useState(20);
+    const [q, setQ] = useState("");
+    const [loading, setLoading] = useState(true);
+    const [err, setErr] = useState("");
+
+    // editor state
+    const emptyForm = { _id: "", title: "", slug: "", date: new Date().toISOString().slice(0, 10), blurb: "", content: "", published: true };
+    const [form, setForm] = useState(emptyForm);
+    const [saving, setSaving] = useState(false);
+
+    const params = useMemo(() => {
+        const p = new URLSearchParams();
+        p.set("page", String(page));
+        p.set("limit", String(limit));
+        if (q) p.set("q", q);
+        return p.toString();
+    }, [page, limit, q]);
+
+    async function load() {
+        setLoading(true); setErr("");
+        try {
+            const d = await apiFetch(`/admin/news?${params}`);
+            setItems(d.items || []); setTotal(d.total || 0);
+        } catch (e) {
+            setErr(e.message || "Failed to load news");
+        } finally { setLoading(false); }
+    }
+    useEffect(() => { load(); }, [params]);
+
+    function startNew() { setForm({ ...emptyForm }); }
+    function editItem(it) {
+        setForm({
+            _id: it._id,
+            title: it.title || "",
+            slug: it.slug || "",
+            date: (it.date ? new Date(it.date).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10)),
+            blurb: it.blurb || "",
+            content: it.content || "",
+            published: !!it.published,
+        });
+    }
+
+    async function save(e) {
+        e.preventDefault();
+        setSaving(true); setErr("");
+        const body = { ...form, date: form.date };
+        try {
+            if (!form.slug) body.slug = slugify(form.title);
+            if (form._id) {
+                await apiFetch(`/admin/news/${form._id}`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+                    body: JSON.stringify(body),
+                });
+            } else {
+                const r = await apiFetch(`/admin/news`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+                    body: JSON.stringify(body),
+                });
+                // load created id into form for convenience
+                if (r?.item?._id) setForm(f => ({ ...f, _id: r.item._id }));
+            }
+            await load();
+        } catch (e2) {
+            if (e2.status === 401 && /MFA required/i.test(e2.message || "")) { onRequireMfa?.(); return; }
+            setErr(e2.message || "Save failed");
+        } finally { setSaving(false); }
+    }
+
+    async function remove(id) {
+        if (!confirm("Delete this story?")) return;
+        try {
+            await apiFetch(`/admin/news/${id}`, {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json; charset=UTF-8", "X-CSRF-Token": csrf },
+            });
+            if (form._id === id) startNew();
+            load();
+        } catch (e) {
+            if (e.status === 401 && /MFA required/i.test(e.message || "")) { onRequireMfa?.(); return; }
+            alert(e.message || "Delete failed");
+        }
+    }
+
+    const pages = Math.max(1, Math.ceil(total / limit));
+
+    return (
+        <div className="space-y-6">
+            <div className="flex items-center justify-between gap-3">
+                <h2 className="text-2xl font-semibold">News</h2>
+                <div className="flex gap-2">
+                    <input className={CLS.field} placeholder="Search title/slug/blurb…" value={q} onChange={e => setQ(e.target.value)} />
+                    <button className={CLS.btnOutline} onClick={load}>{loading ? "Loading…" : "Refresh"}</button>
+                    <button className={CLS.btnPrimary} onClick={startNew}>New</button>
+                </div>
+            </div>
+
+            {/* Editor */}
+            <form onSubmit={save} className="rounded-xl border p-4 dark:border-white/10 space-y-3">
+                <div className="grid sm:grid-cols-2 gap-3">
+                    <label className="flex flex-col gap-1">
+                        <span className="text-xs">Title</span>
+                        <input className={CLS.field} value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} required />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                        <span className="text-xs">Slug</span>
+                        <input className={CLS.field} value={form.slug} placeholder="auto-from-title" onChange={e => setForm(f => ({ ...f, slug: e.target.value }))} />
+                    </label>
+                    <label className="flex flex-col gap-1">
+                        <span className="text-xs">Date</span>
+                        <input className={CLS.field} type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} required />
+                    </label>
+                    <label className="flex items-center gap-2 mt-6">
+                        <input type="checkbox" checked={form.published} onChange={e => setForm(f => ({ ...f, published: e.target.checked }))} />
+                        <span className="text-sm">Published</span>
+                    </label>
+                </div>
+
+                <label className="flex flex-col gap-1">
+                    <span className="text-xs">Blurb</span>
+                    <input className={CLS.field} value={form.blurb} onChange={e => setForm(f => ({ ...f, blurb: e.target.value }))} />
+                </label>
+
+                <label className="flex flex-col gap-1">
+                    <span className="text-xs">Content (HTML or markdown)</span>
+                    <textarea className={CLS.field + " min-h-[180px]"} value={form.content} onChange={e => setForm(f => ({ ...f, content: e.target.value }))} />
+                </label>
+
+                <div className="flex items-center gap-2">
+                    <button className={CLS.btnPrimary} disabled={saving}>{saving ? "Saving…" : (form._id ? "Update" : "Create")}</button>
+                    {form._id && (
+                        <button type="button" className={CLS.btnOutline} onClick={() => remove(form._id)}>Delete</button>
+                    )}
+                    {err && <div className="text-sm text-rose-600">{err}</div>}
+                </div>
+            </form>
+
+            {/* List */}
+            <div className="space-y-2">
+                {items.map(it => (
+                    <div key={it._id} className="rounded-xl border p-3 flex items-center justify-between dark:border-white/10">
+                        <div>
+                            <div className="font-medium">{it.title} {it.published ? "" : <span className="text-xs text-slate-500">(unpublished)</span>}</div>
+                            <div className="text-xs text-slate-500">
+                                {it.slug} · {it.date ? new Date(it.date).toLocaleDateString() : "—"}
+                            </div>
+                            {it.blurb && <div className="text-sm mt-1 text-slate-700 dark:text-slate-300">{it.blurb}</div>}
+                        </div>
+                        <div className="flex gap-2">
+                            <button className={CLS.btnOutline} onClick={() => editItem(it)}>Edit</button>
+                            <button className={CLS.btnOutline} onClick={() => remove(it._id)}>Delete</button>
+                        </div>
+                    </div>
+                ))}
+                {items.length === 0 && !loading && <div className="text-sm text-slate-500">No news yet.</div>}
+            </div>
+
+            {/* pagination */}
+            <div className="flex items-center justify-between text-sm">
+                <div>Page <b>{page}</b> of <b>{pages}</b> · Total <b>{total}</b></div>
+                <div className="flex gap-2">
+                    <button className={CLS.btnOutline} onClick={() => setPage(1)} disabled={page === 1}>First</button>
+                    <button className={CLS.btnOutline} onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>Prev</button>
+                    <button className={CLS.btnOutline} onClick={() => setPage(p => Math.min(pages, p + 1))} disabled={page === pages}>Next</button>
+                    <button className={CLS.btnOutline} onClick={() => setPage(pages)} disabled={page === pages}>Last</button>
+                </div>
+                <select className={CLS.field + " w-28"} value={limit} onChange={e => setLimit(parseInt(e.target.value) || 20)}>
+                    {[10, 20, 50, 100].map(n => <option key={n} value={n}>{n} / page</option>)}
+                </select>
+            </div>
+        </div>
+    );
+}
+
 
 
 // ---------- Root component exported ----------
@@ -652,6 +843,7 @@ export default function Admin() {
     const [enrolled, setEnrolled] = useState(true);
     const [tab, setTab] = useState("messages"); // <— NEW
     const csrf = useCsrf();
+
 
     useEffect(() => {
         apiFetch("/admin/messages?page=1&limit=1")
@@ -693,24 +885,18 @@ export default function Admin() {
     return (
         <div className="mx-auto max-w-6xl px-4 py-8">
             <div className="mb-6 flex items-center gap-2">
-                <button
-                    className={(tab === "messages" ? CLS.btnPrimary : CLS.btnOutline)}
-                    onClick={() => setTab("messages")}
-                >
-                    Messages
-                </button>
-                <button
-                    className={(tab === "users" ? CLS.btnPrimary : CLS.btnOutline)}
-                    onClick={() => setTab("users")}
-                >
-                    Users
-                </button>
+                <button className={(tab === "messages" ? CLS.btnPrimary : CLS.btnOutline)} onClick={() => setTab("messages")}>Messages</button>
+                <button className={(tab === "users" ? CLS.btnPrimary : CLS.btnOutline)} onClick={() => setTab("users")}>Users</button>
+                <button className={(tab === "news" ? CLS.btnPrimary : CLS.btnOutline)} onClick={() => setTab("news")}>News</button>
+
             </div>
 
             {tab === "messages" ? (
                 <AdminMessages onLoggedOut={() => setAuthed(false)} onMfaRequired={() => setMfaNeeded(true)} />
-            ) : (
+            ) : tab === "users" ? (
                 <AdminUsers onRequireMfa={() => setMfaNeeded(true)} />
+            ) : (
+                <AdminNews onRequireMfa={() => setMfaNeeded(true)} />
             )}
         </div>
     );
