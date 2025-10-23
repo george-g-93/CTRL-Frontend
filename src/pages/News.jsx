@@ -14,11 +14,13 @@ export default function News() {
     let alive = true;
     (async () => {
       try {
-        const r = await fetch(`${API}/news`, { cache: "no-store" });
+        const r = await fetch(`${API}/news`, { credentials: "include", cache: "no-store" });
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         const data = await r.json();
-        // Expecting [{ slug, title, blurb, date }]
-        if (alive) setPosts(Array.isArray(data) ? data : []);
+
+        // Accept either an array or { items: [...] }
+        const list = Array.isArray(data) ? data : (Array.isArray(data.items) ? data.items : []);
+        if (alive) setPosts(list);
       } catch (e) {
         if (alive) setErr("Couldn't load news right now.");
       } finally {
