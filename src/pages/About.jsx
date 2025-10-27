@@ -1,4 +1,6 @@
 // FILE: src/pages/About.jsx
+import Seo from "../components/Seo";
+
 export default function About() {
   const points = [
     { h: "Independent & practical", p: "We’re auditors who’ve sat in the transport office. We build controls that actually work." },
@@ -8,6 +10,13 @@ export default function About() {
 
   return (
     <>
+
+      <Seo
+        title="About — CTRL Compliance"
+        description="Operator licence audits, systems, training, and ongoing compliance support."
+        canonical="https://ctrlcompliance.co.uk/about"
+      />
+
       <section className="mx-auto max-w-6xl px-6 py-16">
         <h1 className="text-4xl font-semibold tracking-tight">About CTRL</h1>
         <p className="mt-2 text-slate-600 dark:text-slate-400 max-w-2xl">

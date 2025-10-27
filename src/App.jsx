@@ -15,6 +15,8 @@ import Terms from "./pages/Terms.jsx";
 import Cookies from "./pages/Cookies.jsx";
 import Admin from "./pages/Admin.jsx"
 import NewsPost from "./pages/NewsPost.jsx";
+import Blogs from "./pages/Blogs.jsx";
+import BlogPost from "./pages/BlogPost.jsx";
 
 export default function App() {
 
@@ -43,6 +45,8 @@ export default function App() {
         <Route path="/cookies" element={<Cookies />} />
         <Route path="/admin" element={<Admin />} />
         <Route path="/news/:slug" element={<NewsPost />} />
+        <Route path="/blogs" element={<Blogs />} />
+        <Route path="/blog/:slug" element={<BlogPost />} />
       </Routes>
       <Footer />
     </div>

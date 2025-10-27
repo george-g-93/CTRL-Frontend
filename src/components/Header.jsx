@@ -7,6 +7,147 @@ import { useTheme } from "../theme/ThemeProvider.jsx";
 import Logo from "./Logo.jsx";
 
 
+// --- API base (same logic you use elsewhere) ---
+const fromVite = (typeof import.meta !== "undefined" && import.meta.env?.VITE_API_BASE) || "";
+const fromWindow = (typeof window !== "undefined" && window.__ENV?.VITE_API_BASE) || "";
+const rawBase = (import.meta?.env?.MODE === "development") ? fromVite || fromWindow : fromWindow || fromVite;
+const API_ROOT = (rawBase || "").replace(/\/+$/, "");
+
+// tiny fetch helper
+async function apiFetch(path, opts = {}) {
+  const res = await fetch(`${API_ROOT}${path}`, {
+    credentials: "include",
+    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
+    ...opts,
+  });
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    const err = new Error(body?.error || `HTTP ${res.status}`);
+    err.status = res.status;
+    err.body = body;
+    throw err;
+  }
+  return body;
+}
+
+// get CSRF token
+function useCsrf() {
+  const [csrf, setCsrf] = useState("");
+  useEffect(() => {
+    if (!API_ROOT) return;
+    apiFetch("/admin/csrf", { headers: {} })
+      .then(d => setCsrf(d.csrf))
+      .catch(() => setCsrf(""));
+  }, []);
+  return csrf;
+}
+
+// read current admin (email) if logged in
+function useAdminSession() {
+  const [user, setUser] = useState(null);   // { email } or null
+  const [loading, setLoading] = useState(!!API_ROOT);
+
+  useEffect(() => {
+    if (!API_ROOT) { setLoading(false); return; }
+    let gone = false;
+
+    async function check() {
+      setLoading(true);
+      try {
+        // Try a lightweight /admin/me if it exists
+        const me = await apiFetch("/admin/me", { headers: {} });
+        if (!gone) setUser({ email: me.email || "admin" });
+      } catch {
+        // Fallback: probe a protected endpoint without changing state
+        try {
+          await apiFetch("/admin/messages?page=1&limit=1");
+          if (!gone) setUser({ email: "admin" }); // we don’t know the email without /admin/me
+        } catch {
+          if (!gone) setUser(null);
+        }
+      } finally {
+        if (!gone) setLoading(false);
+      }
+    }
+    check();
+    return () => { gone = true; };
+  }, []);
+
+  return { user, loading, setUser };
+}
+function UserMenu() {
+  const csrf = useCsrf();
+  const { user, loading, setUser } = useAdminSession();
+  const [open, setOpen] = useState(false);
+
+  if (loading) return null;
+
+  async function logout() {
+    try {
+      await apiFetch("/admin/logout", { method: "POST", headers: { "X-CSRF-Token": csrf } });
+      setUser(null);
+    } catch {
+      // ignore
+    }
+  }
+
+  // simple avatar with initials
+  const initials = (user?.email || "")
+    .split("@")[0]
+    .split(/[\.\_\-]/)
+    .slice(0, 2)
+    .map(s => s[0]?.toUpperCase())
+    .join("") || "AD";
+
+  if (!user) {
+    // not logged in: show a subtle Admin link
+    return (
+      //<Link to="/admin" className="hidden md:inline-flex rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs hover:bg-slate-50 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/15">
+        <></>
+      //</Link>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setOpen(v => !v)}
+        className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-2 py-1.5 hover:bg-slate-50 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/15"
+        title={user.email}
+      >
+        <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-800 text-xs font-semibold dark:bg-emerald-400/20 dark:text-emerald-100">
+          {initials}
+        </span>
+        <span className="hidden sm:inline text-xs text-slate-700 dark:text-slate-300 max-w-[160px] truncate">{user.email}</span>
+      </button>
+
+      {/* dropdown */}
+      {open && (
+        <div
+          className="absolute right-0 mt-2 z-[10000] w-56 rounded-xl border border-slate-200 bg-white p-2 text-sm shadow-xl dark:border-white/10 dark:bg-slate-950"
+          onMouseLeave={() => setOpen(false)}
+        >
+          <div className="px-3 py-2 text-xs text-slate-500 dark:text-slate-400">{user.email}</div>
+          <Link
+            to="/admin"
+            className="block rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
+            onClick={() => setOpen(false)}
+          >
+            Admin dashboard
+          </Link>
+          <button
+            className="block w-full text-left rounded-lg px-3 py-2 hover:bg-slate-100 dark:hover:bg-white/[0.06]"
+            onClick={() => { setOpen(false); logout(); }}
+          >
+            Log out
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 // FILE: src/components/Header.jsx
 // …imports unchanged…
 export default function Header() {
@@ -38,9 +179,10 @@ export default function Header() {
         {/* Desktop nav */}
         <nav className="hidden md:flex items-center gap-8 text-sm text-slate-600 dark:text-slate-300">
           <NavLink to="/" end className={({ isActive }) => isActive ? "text-emerald-700 dark:text-emerald-300" : "hover:text-emerald-700 dark:hover:text-emerald-300"}>Home</NavLink>
-          <NavLink to="/news" className={({ isActive }) => isActive ? "text-emerald-700 dark:text-emerald-300" : "hover:text-emerald-700 dark:hover:text-emerald-300"}>News</NavLink>
           <NavLink to="/about" className={({ isActive }) => isActive ? "text-emerald-700 dark:text-emerald-300" : "hover:text-emerald-700 dark:hover:text-emerald-300"}>About us</NavLink>
           <NavLink to="/services" className={({ isActive }) => isActive ? "text-emerald-700 dark:text-emerald-300" : "hover:text-emerald-700 dark:hover:text-emerald-300"}>Services</NavLink>
+          <NavLink to="/blogs" className={({ isActive }) => isActive ? "text-emerald-700 dark:text-emerald-300" : "hover:text-emerald-700 dark:hover:text-emerald-300"}>Blog</NavLink>
+          <NavLink to="/news" className={({ isActive }) => isActive ? "text-emerald-700 dark:text-emerald-300" : "hover:text-emerald-700 dark:hover:text-emerald-300"}>News</NavLink>
           <a href="/#process" className="hover:text-emerald-700 dark:hover:text-emerald-300">Process</a>
           <a href="/#contact" className="hover:text-emerald-700 dark:hover:text-emerald-300">Contact</a>
         </nav>
@@ -50,6 +192,8 @@ export default function Header() {
           <div className="hidden md:block">
             <a href="/#contact" className="btn-outline">Book a call</a>
           </div>
+          {/* NEW: user dropdown */}
+          <UserMenu />
           {/* Keep ONE mobile toggle only */}
           <button
             type="button"
@@ -165,8 +309,8 @@ function ThemeSwitch({ theme, setTheme, toggleTheme }) {
   // Compact control that cycles with click; right-click (or menu) allows explicit pick
   const icon =
     theme === "dark" ? <Moon className="h-4 w-4" /> :
-    theme === "light" ? <Sun className="h-4 w-4" /> :
-    <Laptop className="h-4 w-4" />;
+      theme === "light" ? <Sun className="h-4 w-4" /> :
+        <Laptop className="h-4 w-4" />;
 
   return (
     <div className="relative">

@@ -7,6 +7,7 @@ import {
   TimerReset, ArrowRight, Phone, Mail, CheckCircle2,
   Building2, LineChart, BookOpenCheck
 } from "lucide-react";
+import Seo from "../components/Seo";
 
 /* Theme-aware utility classes injected once */
 const styles = `
@@ -211,68 +212,79 @@ function ProcessStep({ index, title, desc, Icon, points }) {
   }
 
   return (
-    <motion.div
-      ref={cardRef}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={() => {
-        if (cardRef.current) {
-          cardRef.current.style.removeProperty("--mx");
-          cardRef.current.style.removeProperty("--my");
-        }
-      }}
-      initial={{ opacity: 0, y: 8 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.45 }}
-      whileHover={{ y: -4 }}
-      className="
+
+    <>
+      <Seo
+        title="CTRL Compliance — Transport Auditing & Operator Licence Support"
+        description="Audits, tachograph analysis, and Earned Recognition support for UK operators."
+        canonical="https://ctrlcompliance.co.uk/"
+        ogImage="https://ctrlcompliance.co.uk/og-image.png"
+      />
+
+
+      <motion.div
+        ref={cardRef}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={() => {
+          if (cardRef.current) {
+            cardRef.current.style.removeProperty("--mx");
+            cardRef.current.style.removeProperty("--my");
+          }
+        }}
+        initial={{ opacity: 0, y: 8 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, amount: 0.3 }}
+        transition={{ duration: 0.45 }}
+        whileHover={{ y: -4 }}
+        className="
         relative rounded-2xl border p-6
         border-slate-200 bg-gradient-to-b from-white to-slate-50
         dark:border-white/10 dark:from-white/[0.06] dark:to-white/[0.03]
         shadow-sm hover:shadow-lg transition-shadow
       "
-    >
-      {/* soft spotlight that follows cursor (no transform) */}
-      <div
-        className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 md:opacity-100"
-        style={{
-          background:
-            "radial-gradient(400px 180px at var(--mx,50%) var(--my,0%), rgba(16,185,129,0.10), transparent 60%)",
-          maskImage:
-            "radial-gradient(380px 160px at var(--mx,50%) var(--my,0%), rgba(0,0,0,0.8), transparent 70%)",
-        }}
-      />
+      >
+        {/* soft spotlight that follows cursor (no transform) */}
+        <div
+          className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 md:opacity-100"
+          style={{
+            background:
+              "radial-gradient(400px 180px at var(--mx,50%) var(--my,0%), rgba(16,185,129,0.10), transparent 60%)",
+            maskImage:
+              "radial-gradient(380px 160px at var(--mx,50%) var(--my,0%), rgba(0,0,0,0.8), transparent 70%)",
+          }}
+        />
 
-      {/* header row */}
-      <div className="flex items-center gap-3">
-        <div className="
+        {/* header row */}
+        <div className="flex items-center gap-3">
+          <div className="
           h-10 w-10 grid place-items-center rounded-xl border
           border-emerald-300/40 bg-emerald-50 text-emerald-700
           dark:border-emerald-400/30 dark:bg-emerald-400/15 dark:text-emerald-200
         ">
-          {String(index).padStart(2, "0")}
-        </div>
-        <div className="
+            {String(index).padStart(2, "0")}
+          </div>
+          <div className="
           h-10 w-10 grid place-items-center rounded-xl border
           border-slate-200 bg-slate-50
           dark:border-white/10 dark:bg-emerald-400/20
         ">
-          <Icon className="h-5 w-5" />
+            <Icon className="h-5 w-5" />
+          </div>
         </div>
-      </div>
 
-      <h3 className="mt-4 text-xl font-semibold">{title}</h3>
-      <p className="mt-1 text-slate-600 dark:text-slate-300 text-sm">{desc}</p>
+        <h3 className="mt-4 text-xl font-semibold">{title}</h3>
+        <p className="mt-1 text-slate-600 dark:text-slate-300 text-sm">{desc}</p>
 
-      <ul className="mt-4 space-y-2">
-        {points.map((p) => (
-          <li key={p} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
-            <CheckCircle2 className="mt-[2px] h-4 w-4 text-emerald-600 dark:text-emerald-300" />
-            <span>{p}</span>
-          </li>
-        ))}
-      </ul>
-    </motion.div>
+        <ul className="mt-4 space-y-2">
+          {points.map((p) => (
+            <li key={p} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300">
+              <CheckCircle2 className="mt-[2px] h-4 w-4 text-emerald-600 dark:text-emerald-300" />
+              <span>{p}</span>
+            </li>
+          ))}
+        </ul>
+      </motion.div>
+    </>
   );
 }
 
