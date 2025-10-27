@@ -270,9 +270,10 @@ export default function Header() {
 
             <nav className="px-5 py-4 text-sm">
               <MobileItem to="/" onSelect={() => setOpen(false)}>Home</MobileItem>
-              <MobileItem to="/news" onSelect={() => setOpen(false)}>News</MobileItem>
               <MobileItem to="/services" onSelect={() => setOpen(false)}>Services</MobileItem>
               <MobileItem to="/about" onSelect={() => setOpen(false)}>About us</MobileItem>
+              <MobileItem to="/blogs" onSelect={() => setOpen(false)}>Blogs</MobileItem>
+              <MobileItem to="/news" onSelect={() => setOpen(false)}>News</MobileItem>
 
               <div className="mt-3 h-px bg-slate-200 dark:bg-white/10" />
 
