@@ -184,58 +184,55 @@ export default function Blogs() {
             )}
 
             {/* Rest of posts (card grid) */}
-            <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {rest.map(post => (
-                    <article key={post._id} className={CLS.card}>
-                        <Link to={`/blog/${encodeURIComponent(post.slug)}`} className="block">
-                            <div className="aspect-[4/3] w-full overflow-hidden">
-                                <img
-                                    src={post.heroUrl || placeholder}
-                                    alt=""
-                                    className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
-                                    loading="lazy"
-                                />
-                            </div>
-                        </Link>
+            {!loading && items.length === 0 ? (
+  <div className="text-sm text-slate-500">No posts found.</div>
+) : (
+  <section className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    {rest.map(post => (
+      <article key={post._id} className={CLS.card}>
+        <Link to={`/blog/${encodeURIComponent(post.slug)}`} className="block">
+          <div className="aspect-[4/3] w-full overflow-hidden">
+            <img
+              src={post.heroUrl || placeholder}
+              alt=""
+              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.02]"
+              loading="lazy"
+            />
+          </div>
+        </Link>
 
-                        <div className="p-3">
-                            <div className={CLS.meta}>{fmtDate(post.date)}</div>
+        <div className="p-3">
+          <div className={CLS.meta}>{fmtDate(post.date)}</div>
+          <h3 className="mt-1 text-lg font-semibold leading-snug">
+            <Link to={`/blog/${encodeURIComponent(post.slug)}`} className={CLS.link}>
+              {post.title}
+            </Link>
+          </h3>
+          {post.blurb && (
+            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 line-clamp-4">
+              {post.blurb}
+            </p>
+          )}
+          {Array.isArray(post.tags) && post.tags.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-1">
+              {post.tags.map(t => (
+                <button
+                  key={t}
+                  onClick={() => update("tag", t)}
+                  className={CLS.tag}
+                  title={`Filter by ${t}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </article>
+    ))}
+  </section>
+)}
 
-                            <h3 className="mt-1 text-lg font-semibold leading-snug">
-                                <Link to={`/blog/${encodeURIComponent(post.slug)}`} className={CLS.link}>
-                                    {post.title}
-                                </Link>
-                            </h3>
-
-                            {post.blurb && (
-                                <p className="mt-2 text-sm text-slate-700 dark:text-slate-300 line-clamp-4">
-                                    {post.blurb}
-                                </p>
-                            )}
-
-                            {/* chips at bottom */}
-                            {Array.isArray(post.tags) && post.tags.length > 0 && (
-                                <div className="mt-3 flex flex-wrap gap-1">
-                                    {post.tags.map(t => (
-                                        <button
-                                            key={t}
-                                            onClick={() => update("tag", t)}
-                                            className={CLS.tag}
-                                            title={`Filter by ${t}`}
-                                        >
-                                            {t}
-                                        </button>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-
-                    </article>
-                ))}
-                {!loading && rest.length === 0 && (
-                    <div className="text-sm text-slate-500">No posts found.</div>
-                )}
-            </section>
 
             {/* Pagination */}
             <div className="mt-8 flex items-center justify-between text-sm">

@@ -466,7 +466,7 @@ function AdminMessages({ onLoggedOut, onMfaRequired }) {
                 <h1 className="text-2xl font-semibold">Enquiries</h1>
                 <div className="flex gap-2">
                     <button className={CLS.btnOutline} onClick={() => m.reload()}>{m.loading ? "Loading…" : "Refresh"}</button>
-                    <button className={CLS.btnOutline} onClick={logout}>Sign out</button>
+                    {/*<button className={CLS.btnOutline} onClick={logout}>Sign out</button>*/}
                 </div>
             </div>
 
@@ -1555,6 +1555,7 @@ export default function Admin() {
             setAuthed(false);
         } else {
             setAuthed(true);
+            window.dispatchEvent(new CustomEvent("ctrl:admin-auth", { detail: { status: "in" } }));
         }
     }
 

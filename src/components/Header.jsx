@@ -54,14 +54,12 @@ function useAdminSession() {
     async function check() {
       setLoading(true);
       try {
-        // Try a lightweight /admin/me if it exists
         const me = await apiFetch("/admin/me", { headers: {} });
         if (!gone) setUser({ email: me.email || "admin" });
       } catch {
-        // Fallback: probe a protected endpoint without changing state
         try {
           await apiFetch("/admin/messages?page=1&limit=1");
-          if (!gone) setUser({ email: "admin" }); // we don’t know the email without /admin/me
+          if (!gone) setUser({ email: "admin" });
         } catch {
           if (!gone) setUser(null);
         }
@@ -69,9 +67,23 @@ function useAdminSession() {
         if (!gone) setLoading(false);
       }
     }
+
     check();
-    return () => { gone = true; };
+
+    // ✅ Listen for global login/logout event
+    function onAuthChange(e) {
+      // e.detail.status is "in" or "out"
+      if (e.detail.status === "in") check();
+      if (e.detail.status === "out") setUser(null);
+    }
+
+    window.addEventListener("ctrl:admin-auth", onAuthChange);
+    return () => {
+      gone = true;
+      window.removeEventListener("ctrl:admin-auth", onAuthChange);
+    };
   }, []);
+
 
   return { user, loading, setUser };
 }
@@ -84,12 +96,25 @@ function UserMenu() {
 
   async function logout() {
     try {
-      await apiFetch("/admin/logout", { method: "POST", headers: { "X-CSRF-Token": csrf } });
+      await apiFetch("/admin/logout", {
+        method: "POST",
+        headers: { "X-CSRF-Token": csrf },
+      });
+    } catch (err) {
+      console.warn("Logout failed or already logged out:", err);
+    } finally {
+      // Clear local session immediately
       setUser(null);
-    } catch {
-      // ignore
+
+      // Notify other parts of the app
+      window.dispatchEvent(new CustomEvent("ctrl:admin-auth", { detail: { status: "out" } }));
+
+      // Give the cookie/session a moment to clear before reload
+      setTimeout(() => window.location.reload(), 300);
     }
   }
+
+
 
   // simple avatar with initials
   const initials = (user?.email || "")
@@ -103,7 +128,7 @@ function UserMenu() {
     // not logged in: show a subtle Admin link
     return (
       //<Link to="/admin" className="hidden md:inline-flex rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs hover:bg-slate-50 dark:border-white/15 dark:bg-white/10 dark:hover:bg-white/15">
-        <></>
+      <></>
       //</Link>
     );
   }
